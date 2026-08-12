@@ -1,8 +1,9 @@
 # Research Flow
 
-This document defines the planned workflow for studying Uniswap V3 liquidity
-provider risk on Ethereum Mainnet. Each stage produces an auditable output and
-must pass its gate before the next dependent stage begins.
+This document defines the planned workflow for **An Empirical Analysis of
+Uniswap V3 LP Risk Measures: Evidence from the WETH/USDT Pool**. Each stage
+produces an auditable output and must pass its gate before the next dependent
+stage begins.
 
 Return to the [repository overview](README.md).
 
@@ -10,92 +11,102 @@ Return to the [repository overview](README.md).
 
 ```mermaid
 flowchart TD
-    A[Define research questions] --> B[Review prior research]
-    B --> C[Freeze study universe and hypotheses]
-    C --> D[Collect Ethereum and Uniswap V3 data]
-    D --> E{Data validation passes?}
-    E -- No --> D
-    E -- Yes --> F[Construct LP risk metrics]
-    F --> G[Run empirical analysis]
-    G --> H[Run robustness and sensitivity checks]
-    H --> I{Evidence is reproducible?}
-    I -- No --> C
-    I -- Yes --> J[Generate tables and figures]
-    J --> K[Write and compile the paper]
+    A[Fix research questions and review measures] --> B[Freeze pool, period, positions, and empirical design]
+    B --> C[Collect pool, position, benchmark, and regime data]
+    C --> D{Data validation passes?}
+    D -- No --> C
+    D -- Yes --> E[Reconstruct actual LP positions and realized returns]
+    E --> F[Compute IL, LVR, and PL]
+    F --> G[Estimate and compare full-sample explanatory power]
+    G --> H[Evaluate regime-dependent explanatory power]
+    H --> I[Run sensitivity and reproducibility checks]
+    I --> J{Evidence is reviewable?}
+    J -- No --> B
+    J -- Yes --> K[Generate paper tables, figures, and manuscript]
 ```
 
-The backward paths are intentional. A validation failure returns to collection,
-while a reproducibility or robustness failure may require a revised study design
-and a newly versioned analysis rather than an undocumented adjustment.
+The backward paths are intentional. Data failures return to collection, while a
+failure in definitions, timing, sensitivity, or reproducibility requires a
+versioned design revision rather than an undocumented adjustment.
 
 ## Stage definitions
 
 | Stage | Inputs | Required output | Gate to continue |
 | --- | --- | --- | --- |
-| 1. Research questions | Initial LP risk framework | Bounded questions, primary outcomes, and explicit exclusions | Questions address Ethereum Mainnet Uniswap V3 LPs and can be measured |
-| 2. Prior research | Papers, protocol documentation, and empirical methods | Reviewed reference catalog with relevance and limitations | Every adopted concept or method has a traceable source |
-| 3. Study design | Questions and prior research | Versioned study period, pool and position filters, benchmarks, hypotheses, and analysis plan | All confirmatory choices are fixed; current values are TBD |
-| 4. Data collection | Frozen universe and source plan | Immutable raw extracts plus provenance records | Chain, contracts, block ranges, retrieval time, and source are recorded |
-| 5. Data validation | Raw extracts | QA report and validated processed datasets | Completeness, uniqueness, decoding, units, and reconciliation checks pass |
-| 6. Metric construction | Validated data and metric definitions | Derived LP P&L, fees, impermanent loss, time-in-range, LVR, and cost measures | Accounting identities and benchmark comparisons pass defined tolerances |
-| 7. Empirical analysis | Derived metrics and frozen hypotheses | Descriptive results, model outputs, and diagnostics | Outputs are reproducible from recorded inputs and configuration |
-| 8. Robustness checks | Primary results | Sensitivity results for defensible alternative assumptions | Conclusions are labeled by their sensitivity; failures are retained and explained |
-| 9. Paper production | Approved evidence and provenance | Generated tables, figures, TeX manuscript, and `paper.pdf` | Every reported claim traces to a reviewed output |
+| 1. Research framing | IL, LVR, PL, realized LP return, and prior literature | Two bounded research questions and documented measure concepts | Scope is limited to explanatory power and regime dependence |
+| 2. Empirical design | Research framing | Selected pool, exact four-year period, position rules, outcome and measure definitions, regimes, and model plan | All confirmatory choices are versioned |
+| 3. Data collection | Frozen design and source plan | Immutable pool, position, benchmark, and regime extracts plus provenance | Chain, pool, period, source, and retrieval details are recorded |
+| 4. Data validation | Raw extracts | QA report and validated processed datasets | Coverage, identity, decoding, units, ordering, and reconciliation checks pass |
+| 5. Position reconstruction | Validated data | Actual LP cash flows, inventory, fees, ending values, and realized returns | Position and return accounting identities pass declared tolerances |
+| 6. Risk-measure construction | Reconstructed positions and frozen definitions | Position-level IL, LVR, and PL | Each measure passes benchmark, timing, and independent-calculation checks |
+| 7. Full-sample analysis | Outcome, measures, and frozen models | Comparable explanatory-power estimates and diagnostics | All measures use the same declared sample, outcome, horizon, and criteria |
+| 8. Regime analysis | Primary results and predeclared regimes | Regime-specific relative-importance estimates and diagnostics | Regime assignment is reproducible and free of look-ahead |
+| 9. Sensitivity and publication | Primary estimates and alternatives | Sensitivity results, generated tables and figures, and manuscript inputs | Every reported claim traces to a reviewed output |
 
 ## Stage gates
 
 ### 1. Design freeze
 
-Before bulk collection or confirmatory analysis, record the following as a
-versioned research decision:
+Before bulk collection or confirmatory analysis, record:
 
-- study start and end blocks or timestamps;
-- included pools, fee tiers, tokens, and LP-position rules;
-- minimum activity or liquidity thresholds;
-- passive-hold and price benchmarks;
-- metric formulas, units, sampling frequency, and exclusions;
-- hypotheses, model specifications, and planned sensitivity checks.
+- the selected WETH/USDT pool address and fee tier;
+- the start and end blocks or timestamps spanning four years;
+- actual LP-position inclusion, exclusion, and ownership rules;
+- realized-return construction, horizon, valuation convention, and treatment of
+  fee income;
+- IL, LVR, and PL formulas, benchmarks, units, horizons, and timing;
+- candidate regime variables, feature windows, and assignment method;
+- model specifications, comparison criteria, and sensitivity checks; and
+- data providers, finality policy, and numerical tolerances.
 
-These values are currently TBD. Exploratory work may inform them, but exploratory
-and confirmatory outputs must remain distinguishable.
+Exploratory work may inform these choices, but exploratory and confirmatory
+outputs must remain distinguishable.
 
 ### 2. Raw-data integrity
 
-Raw data cannot advance when its chain identity, contract identity, block range,
-event ordering, or token-unit interpretation is unknown. The validation report
-must also document how duplicate records, missing blocks, provider disagreement,
-and chain reorganizations were handled.
+Raw data cannot advance when its chain identity, selected pool identity,
+four-year coverage, event ordering, token-unit interpretation, or provenance is
+unknown. The validation report must document duplicates, missing blocks,
+provider disagreement, and chain reorganizations.
 
-### 3. Metric reconciliation
+### 3. Position and measure reconciliation
 
-Each derived measure must have a written definition and an independent check.
-Position cash flows and ending inventory should reconcile to the reported LP
-value within a declared numerical tolerance. Gross results must remain available
-alongside results net of gas and rebalancing costs.
+Actual position cash flows, fee income, inventory, ending value, and realized
+return must reconcile under a written accounting identity. IL, LVR, and PL must
+each have a frozen definition and an independent check against their declared
+benchmark. Range information may enter reconstruction and measure calculations,
+but it is not a separate outcome.
 
-### 4. Robustness review
+### 4. Comparable empirical analysis
 
-Primary findings must be compared with defensible alternatives, including
-benchmark choice, time window, pool filters, sampling frequency, outlier policy,
-and cost assumptions when relevant. A change in conclusion is a result to report,
-not a reason to hide the specification.
+The primary comparison must hold the outcome, sample, horizon, and evaluation
+criteria constant across IL, LVR, and PL. Regime analysis must use predeclared
+features and prevent future data from influencing historical assignments. Gas
+fees are a regime variable rather than a standalone transaction-cost study.
 
-### 5. Publication traceability
+### 5. Sensitivity and publication traceability
+
+Primary findings must be evaluated under defensible alternative windows,
+definitions, filters, thresholds, and estimators. These checks belong within the
+paper's Data and Empirical Design or Empirical Results sections rather than a new
+top-level section.
 
 Every table and figure must identify its generating analysis, input dataset
-version, configuration, and repository revision. The manuscript must not contain
-manually copied values that cannot be regenerated.
+version, configuration, and repository revision. The manuscript must not
+contain manually copied values that cannot be regenerated.
 
 ## Failure handling and versioning
 
-- Do not overwrite raw source extracts. Create a new version when recollection is
-  required.
-- Record failed validation and robustness checks with the reason and resolution.
-- Treat a material change to the study universe, metric definition, or hypothesis
-  as a new research-design version.
+- Do not overwrite raw source extracts; create a new version when recollection
+  is required.
+- Record failed validation, diagnostics, and sensitivity checks with their
+  reason and resolution.
+- Treat a material change to the pool, period, position rules, return, measure,
+  regime, or model as a new empirical-design version.
 - Keep exploratory results clearly labeled and out of confirmatory claims.
 - Stop paper production when a displayed result lacks provenance or cannot be
   reproduced.
 
-Detailed conventions live in the [data methodology](data/), [analysis roadmap](analysis/),
-[reference catalog](research-reference/), and [paper plan](paper/).
+Detailed conventions live in the [data methodology](data/), [analysis
+roadmap](analysis/), [reference catalog](research-reference/), and [paper
+plan](paper/).

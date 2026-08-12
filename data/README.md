@@ -1,87 +1,100 @@
 # Data Methodology
 
 This directory documents how the project will collect, preserve, transform, and
-validate data for Ethereum Mainnet Uniswap V3 LP risk analysis. It currently
-contains documentation only; no datasets or download pipeline have been added.
+validate data for the WETH/USDT case study. It currently contains documentation
+only; no datasets or download pipeline have been added.
 
 See the [research flow](../flow.md) for the gates that data must pass before it
 can support analysis.
 
 ## Data scope
 
-The intended data universe is limited to Uniswap V3 on Ethereum Mainnet. The
-primary analytical perspective is the liquidity provider, with pool-level and
-position-level observations used where the final design requires them.
+The dataset will cover one Uniswap V3 WETH/USDT pool on Ethereum Mainnet for
+four years. WETH is the on-chain representation of ETH. The unit of analysis is
+the actual on-chain LP position, and the analytical outcome is realized LP
+return.
 
-The following study choices remain TBD and must be versioned before bulk data
-collection:
+The following scope is fixed:
 
-- study start and end block or timestamp;
-- included pool and token addresses;
-- included fee tiers;
-- minimum liquidity, volume, or history requirements;
-- LP-position inclusion and exclusion rules;
+| Dimension | Fixed requirement |
+| --- | --- |
+| Network | Ethereum Mainnet |
+| Protocol | Uniswap V3 |
+| Pair and pool count | WETH/USDT, one pool |
+| Study length | Four years |
+| Observation unit | Actual LP position |
+| Required analytical outputs | Realized return, IL, LVR, PL, and market-regime variables |
+
+The following implementation choices remain TBD and must be versioned before
+bulk collection:
+
+- exact pool contract address and fee tier;
+- start and end blocks or timestamps for the four-year window;
+- LP-position inclusion, exclusion, and ownership rules;
+- outcome and measure horizons;
 - sampling frequency and finality policy;
-- data-access provider and fallback provider.
+- reference-price and benchmark inputs required by IL, LVR, and PL; and
+- primary data-access provider and fallback provider.
 
 ## Source domains
 
-Canonical Ethereum records should anchor the dataset. A final source plan may
-use an RPC provider, archive node, indexed database, or public dataset for access,
-but accelerated sources must be reconciled against on-chain evidence.
+Canonical Ethereum records should anchor the dataset. An RPC provider, archive
+node, indexed database, or public dataset may accelerate access, but derived
+records must remain reconcilable with on-chain evidence.
 
-| Domain | Candidate content | Research use |
+| Domain | Required content | Research use |
 | --- | --- | --- |
-| Chain and blocks | Block number, timestamp, hash, parent hash, and gas fields | Ordering, timing, cost conversion, and reorganization checks |
-| Uniswap V3 registry | Factory-created pool addresses, token pairs, and fee tiers | Define and verify the pool universe |
-| Pool activity | Swap, mint, burn, collect, liquidity, tick, and price state | Reconstruct market activity, liquidity, and fee-generating periods |
-| LP positions | Position ownership, liquidity changes, collections, and transfers where required | Reconstruct position cash flows and holding intervals |
-| Tokens | Contract address, decimals, symbol, and supply metadata where relevant | Normalize units and identify assets |
-| Benchmarks | Reference prices and gas valuation inputs selected in the study design | Value inventory, costs, and passive-hold comparisons |
+| Chain and blocks | Block number, timestamp, hash, parent hash, and gas fields | Ordering, timing, finality, and gas-fee regimes |
+| Pool identity | Factory verification, pool address, token ordering, fee tier, and contract version | Confirm the selected WETH/USDT pool |
+| Pool activity | Swap, mint, burn, collect, liquidity, tick, and price state | Reconstruct positions, market activity, fees, and measure inputs |
+| LP positions | Position identifier, ownership evidence where required, liquidity changes, collections, and transfers | Reconstruct actual position cash flows and holding intervals |
+| Token metadata | Contract address, decimals, and symbol | Normalize amounts and distinguish WETH from ETH terminology |
+| Prices and benchmarks | External or on-chain reference prices and other declared benchmark inputs | Value inventory and construct IL, LVR, and PL |
+| Regime inputs | ETH price, volatility inputs, gas fees, transaction volume, trading activity, and approved on-chain variables | Assign market regimes without using future information |
 
-This table defines data domains, not a selected vendor or committed schema.
-Contract addresses, ABI versions, queries, and providers must be recorded when
-collection is implemented.
+Gas data is collected as a market-regime input. This study does not treat LP
+transaction-cost or rebalancing-strategy performance as a separate data product.
+Range boundaries remain necessary position and measure inputs but do not define
+an additional research outcome.
 
 ## Planned data layers
 
-The future pipeline will separate source evidence from research-ready outputs.
-The folders below are a proposed convention and are not created in this draft.
+The future pipeline will keep source evidence separate from research-ready
+outputs.
 
 ```text
 data/
 ├── raw/        # Immutable source extracts
 ├── processed/  # Decoded, normalized, and validated records
-├── derived/    # Analysis-ready metrics and joined panels
+├── derived/    # Position returns, risk measures, regimes, and joined panels
 └── metadata/   # Manifests, checksums, schemas, and QA reports
 ```
 
-- **Raw:** preserve the provider response or canonical extract without manual
-  correction. Corrections create a new version.
+- **Raw:** preserve provider responses or canonical extracts without manual
+  correction; recollection creates a new version.
 - **Processed:** decode events, normalize addresses and token units, resolve
   ordering, and apply documented quality rules.
-- **Derived:** construct position, pool, benchmark, and cost measures required by
-  the analysis.
+- **Derived:** construct actual position histories, realized returns, IL, LVR,
+  PL, and regime features without overwriting source layers.
 - **Metadata:** make every layer traceable without relying on filenames alone.
 
 Large datasets may ultimately live outside Git. The storage mechanism, retention
-policy, and download interface are TBD.
+policy, and download interface remain TBD.
 
 ## Provenance record
 
-Every collected or generated dataset should eventually carry at least the
-following metadata. This is a documentation template, not a runtime schema.
+Every collected or generated dataset should carry at least:
 
 | Field | Meaning |
 | --- | --- |
 | Dataset identifier and version | Stable name for the exact extract or transformation |
 | Network and chain ID | Evidence that records come from Ethereum Mainnet |
-| Protocol and contracts | Uniswap V3 contract addresses and ABI revisions used |
-| Block or time range | Inclusive boundaries and any known gaps |
+| Pool and contracts | Selected pool, token contracts, fee tier, and ABI revisions |
+| Block or time range | Inclusive four-year boundaries and any known gaps |
 | Source | Provider, endpoint class, dataset release, or node configuration |
 | Retrieval time | UTC time at which the source was queried or copied |
 | Query or transform version | Repository revision and entry point that produced the data |
-| Configuration | Pool filters, batching, finality, and normalization settings |
+| Configuration | Position rules, sampling, finality, benchmarks, and regime definitions |
 | Integrity value | Checksum or equivalent content identifier where practical |
 | Rights and terms | License, provider terms, and redistribution constraints |
 
@@ -90,37 +103,41 @@ following metadata. This is a documentation template, not a runtime schema.
 Validation should produce a machine-readable result and a human-readable QA
 summary. At minimum, the implemented pipeline must check:
 
-1. **Network identity:** chain ID, block hashes, and contract addresses match the
-   declared Ethereum Mainnet source.
-2. **Coverage:** requested block intervals are accounted for, including explicit
-   records of gaps, retries, and provider limits.
+1. **Network and pool identity:** chain ID, block hashes, token ordering, fee
+   tier, ABI, and contracts match the declared Ethereum Mainnet pool.
+2. **Coverage:** the complete four-year interval is accounted for, including
+   explicit records of gaps, retries, and provider limits.
 3. **Uniqueness and ordering:** event identity, transaction order, and log order
    are stable; duplicate ingestion is rejected or deterministically removed.
-4. **Decoding:** events use the intended contract ABI and unknown or failed
+4. **Decoding:** events use the intended contract ABI, and unknown or failed
    decodes are reported.
-5. **Units and signs:** token decimals, token ordering, signed quantities, price
-   conventions, and gas denominations are tested.
+5. **Units and signs:** token decimals, signed quantities, WETH/USDT price
+   conventions, fee units, and gas denominations are tested.
 6. **Cross-source reconciliation:** selected event counts, pool state, balances,
    or aggregates are compared with an independent source or direct call.
-7. **Reorganization handling:** the chosen finality policy is applied and changed
-   block hashes trigger an explicit recollection or invalidation path.
-8. **Economic reconciliation:** position cash flows, inventory, fees, and ending
-   value satisfy the accounting checks defined with the analysis metrics.
+7. **Reorganization handling:** the finality policy is applied, and changed block
+   hashes trigger explicit recollection or invalidation.
+8. **Position and economic reconciliation:** position liquidity, cash flows,
+   inventory, fees, ending value, and realized return satisfy the accounting
+   checks defined with the analysis.
+9. **Feature timing:** reference inputs and regime variables are aligned without
+   look-ahead.
 
-Exact tolerances and sample sizes for reconciliation are TBD and must be fixed
-before the data-quality gate is considered operational.
+Exact tolerances and reconciliation sample sizes remain TBD and must be fixed
+before the data-quality gate becomes operational.
 
 ## Reproducibility and data governance
 
-- Record time in UTC and identify time intervals with block boundaries whenever
+- Record time in UTC and identify intervals with block boundaries whenever
   possible.
-- Keep raw data immutable and make transformations deterministic.
-- Store secrets such as provider credentials outside the repository.
-- Do not commit provider responses or reference materials without checking their
+- Keep raw data immutable and transformations deterministic.
+- Store credentials and private provider endpoints outside the repository.
+- Do not commit provider responses or external material without checking
   redistribution terms.
-- Document missing values and exclusions rather than silently filling or dropping
-  them.
-- Link every derived dataset to the metric definition and analysis that consumes
-  it.
+- Document missing values and exclusions rather than silently filling or
+  dropping them.
+- Link every derived dataset to the outcome, risk measure, or regime analysis
+  that consumes it.
 
-No data source, storage format, schema, or provider is endorsed by this draft.
+No data source, storage format, schema, or provider is selected by this
+documentation.

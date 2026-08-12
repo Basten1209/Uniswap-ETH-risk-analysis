@@ -1,8 +1,10 @@
 # Contributing
 
-Thank you for contributing to the Uniswap V3 Ethereum LP Risk Research
-repository. This is an open research project focused on liquidity-provider risk
-in Uniswap V3 pools on Ethereum Mainnet. Every contribution should make the
+Thank you for contributing to **An Empirical Analysis of Uniswap V3 LP Risk
+Measures: Evidence from the WETH/USDT Pool**. This open research project compares
+impermanent loss (IL), loss-versus-rebalancing (LVR), and predictable loss (PL)
+as explanations of realized returns for actual LP positions in one Ethereum
+Mainnet WETH/USDT pool over four years. Every contribution should make that
 research easier to verify, reproduce, or understand.
 
 All changes must reach `main` through a pull request (PR). Do not push directly
@@ -19,9 +21,10 @@ specific area, also read its local guide:
 - [paper plan](paper/README.md).
 
 Opening an Issue before a PR is optional. It is useful when you want early
-feedback on a new research question, a material methodology change, a new data
-source, a large analysis, or a change that affects more than one research stage.
-Small corrections and focused documentation updates may go directly to a PR.
+feedback on a material change to RQ1 or RQ2, the selected pool or position
+sample, a return or risk-measure definition, a regime method, a data source, or
+work that affects more than one research stage. Small corrections and focused
+documentation updates may go directly to a PR.
 
 Keep each PR focused on one coherent change. Separate unrelated research,
 analysis, and documentation work so that each contribution can be reviewed and
@@ -31,10 +34,10 @@ reverted independently.
 
 | Contribution | Include in the PR |
 | --- | --- |
-| Research design or methodology | Research question, proposed assumptions, expected measurement, limitations, and affected workflow stage |
-| Data methodology or pipeline | Network and contracts, block or time coverage, source and retrieval method, provenance, validation checks, and data rights |
-| Research reference | Full citation, stable link, source type, method, dataset, relevance, limitations, and review status |
-| Analysis code | Metric definition, inputs, configuration, reproducible command, tests or reconciliation checks, and expected outputs |
+| Research design or methodology | RQ1 or RQ2, realized-return outcome, affected risk measure or regime, proposed assumptions, limitations, and workflow stage |
+| Data methodology or pipeline | Selected WETH/USDT pool and contracts, four-year coverage, actual-position rules, source and retrieval method, provenance, validation checks, and data rights |
+| Research reference | Full citation, stable link, relevant return, IL, LVR, PL, regime or data-method tag, method, dataset, limitations, and review status |
+| Analysis code | Realized-return, IL, LVR, PL or regime definition, inputs, configuration, reproducible command, tests or reconciliation checks, and expected outputs |
 | Paper content | Supporting analysis output, citations, scope of the claim, limitations, and table or figure provenance |
 | Documentation | Intended reader, corrected or added guidance, checked internal links, and rendered Markdown review |
 
@@ -134,8 +137,8 @@ Use `type/short-description` for branches. Suggested types are:
 - `fix/` for focused corrections.
 
 Prefer concise commit subjects in the form `type: summary`, such as
-`data: document pool selection inputs`. A PR may contain multiple commits when
-they describe useful review steps, but each commit should remain internally
+`data: document LP position sample inputs`. A PR may contain multiple commits
+when they describe useful review steps, but each commit should remain internally
 coherent.
 
 ## Data and external-material policy
@@ -180,8 +183,10 @@ that the working tree does not contain accidental changes.
 
 Also complete the checks that match your contribution:
 
-- **Research design:** confirm that assumptions, exclusions, planned outcomes,
-  and exploratory versus confirmatory status are explicit.
+- **Research design:** confirm that the single-pool four-year sample, actual LP
+  positions, realized-return outcome, IL/LVR/PL measures, regime variables,
+  assumptions, exclusions, and exploratory versus confirmatory status are
+  explicit.
 - **Data:** run the available coverage, uniqueness, decoding, unit, provenance,
   and reconciliation checks; report their commands and results.
 - **Analysis:** run all relevant tests and the reproducibility entry point;
@@ -207,7 +212,8 @@ include the following information in the PR description:
 
 ## Research context
 
-- Research question or workflow stage:
+- Research question (RQ1 or RQ2) or workflow stage:
+- Affected outcome, risk measure, or regime:
 - Assumptions and limitations:
 - Related Issue, if any:
 
