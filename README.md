@@ -99,9 +99,12 @@ data and methodological assumptions, and avoid presenting unverified outputs as
 findings. Reference material must follow the catalog and rights guidance in
 [`research-reference/README.md`](research-reference/README.md).
 
-A project license, contribution process, and formal citation format have not yet
-been selected. Until they are added, do not assume that repository contents may
-be redistributed under a particular open-source or open-data license.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the fork and branch workflows,
+validation requirements, pull request checklist, and merge policy.
+
+A project license and formal citation format have not yet been selected. Until
+they are added, do not assume that repository contents may be redistributed
+under a particular open-source or open-data license.
 
 ## Disclaimer
 
