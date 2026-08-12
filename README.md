@@ -1,113 +1,128 @@
-# Uniswap V3 Ethereum LP Risk Research
+# An Empirical Analysis of Uniswap V3 LP Risk Measures: Evidence from the WETH/USDT Pool
 
-This repository is an open research workspace for studying the risks borne by
-liquidity providers (LPs) in Uniswap V3 pools on Ethereum Mainnet. The project
-will connect source data, reproducible analysis, research references, and a
-paper in one auditable workflow.
+This repository is an open research workspace for an empirical comparison of
+risk measures for Uniswap V3 liquidity providers (LPs). The study asks when,
+why, and how much each measure helps explain realized LP returns.
 
 The repository is currently in its documentation and research-design stage. It
-does not yet contain datasets, analysis code, TeX sources, or research results.
-
-## Research scope
-
-| Dimension | Current scope |
-| --- | --- |
-| Network | Ethereum Mainnet |
-| Protocol | Uniswap V3 |
-| Primary perspective | Liquidity provider |
-| Units of analysis | Pools and LP positions, subject to the final study design |
-| Study period | TBD |
-| Pool selection rule | TBD |
-| Data providers | TBD; canonical on-chain records remain the source of truth |
-
-The first research phase focuses on economic and execution risks that affect
-LP outcomes. Smart-contract exploits, token governance, and legal or regulatory
-risk may be discussed as limitations, but they are not primary empirical
-outcomes in the initial study.
+does not yet contain datasets, analysis code, TeX sources, or empirical results.
 
 ## Research questions
 
-1. How do Uniswap V3 LP positions perform against a passive holding benchmark
-   after fees and transaction costs?
-2. How do price movement and chosen tick ranges affect time in range and capital
-   utilization?
-3. Under which market conditions does fee income compensate for impermanent
-   loss, loss-versus-rebalancing (LVR), and adverse selection?
-4. How do rebalancing frequency and Ethereum gas costs change realized LP
-   returns?
-5. How are LP outcomes associated with volatility, trading volume, fee tier,
-   and liquidity concentration?
+1. Do impermanent loss (IL), loss-versus-rebalancing (LVR), and predictable loss
+   (PL) explain realized LP returns?
+2. Does the relative explanatory power of these measures change across market
+   regimes?
 
-Specific hypotheses, thresholds, and statistical models are TBD and must be
-fixed before confirmatory analysis begins.
+## Research objective
 
-## Risk framework
+The project will compute IL, LVR, PL, and realized return for each observed LP
+position, then evaluate:
 
-| Risk | Mechanism | Candidate measures |
-| --- | --- | --- |
-| Impermanent loss | Pool inventory changes as the relative token price moves | LP value versus a passive holding benchmark |
-| Range risk | Concentrated liquidity stops earning fees after price leaves its range | Time in range, inactive capital duration, boundary crossings |
-| Fee-income uncertainty | Trading volume and fee capture may not offset inventory losses | Gross and net fee income, fee yield, fee-to-loss ratio |
-| LVR and adverse selection | Arbitrage and informed flow trade against stale pool prices | LVR estimates, post-trade price movement, benchmark-relative loss |
-| Rebalancing and gas cost | Position management consumes capital and incurs execution costs | Rebalance count, gas paid, turnover, return before and after costs |
+- the full-sample explanatory power of each risk measure for realized LP
+  returns; and
+- the relative importance of the measures under different market conditions.
 
-All measures in this table are candidates. Their final definitions, units,
-benchmarks, and sampling frequencies belong in the research design and data
-dictionary before implementation.
+The goal is empirical comparison, not the introduction of another risk measure
+or the evaluation of a particular liquidity-management strategy.
+
+## Dataset
+
+| Dimension | Research scope |
+| --- | --- |
+| Network | Ethereum Mainnet |
+| Protocol | Uniswap V3 |
+| Pool | One WETH/USDT pool; WETH is the on-chain representation of ETH |
+| Study length | Four years |
+| Unit of analysis | Actual on-chain LP positions |
+| Outcome | Realized LP return |
+
+The exact pool address and fee tier, calendar or block boundaries, data
+providers, position filters, return horizon, and sampling frequency remain to be
+fixed in the empirical design.
+
+## Risk measures and outcome
+
+| Item | Role in the study |
+| --- | --- |
+| Impermanent loss (IL) | Measures LP performance relative to passively holding the position's initial assets |
+| Loss-versus-rebalancing (LVR) | Measures loss relative to a rebalancing benchmark |
+| Predictable loss (PL) | Measures the predictable, unhedgeable loss of liquidity provision relative to its defined self-financing benchmark |
+| Realized LP return | The outcome whose relationship with IL, LVR, and PL will be estimated |
+
+PL means **predictable loss**, not profit and loss. Its operational definition
+will follow the relevant literature, including
+[Cartea, Drissi, and Monga](https://doi.org/10.1080/1350486X.2023.2277957).
+All three measure definitions, benchmarks, units, and horizons must be frozen
+before confirmatory analysis. Fee income remains an input to realized LP return,
+not a fourth risk measure.
+
+## Regime analysis
+
+The study will test whether the measures' explanatory power varies with market
+conditions. Candidate regime variables are:
+
+- ETH price level;
+- volatility;
+- gas fees;
+- transaction volume;
+- trading activity; and
+- other documented on-chain variables.
+
+Gas fees enter this research as a candidate market-regime variable. LP
+transaction-cost or rebalancing-strategy analysis is not a separate research
+objective.
+
+## Expected contributions
+
+- Identify which risk measure is most informative under different market
+  conditions.
+- Provide practical guidance on which measures LPs should monitor.
+- Supply empirical evidence for DEX LP risk evaluation and LP-side fee or
+  revenue design.
+
+## Brief paper index
+
+- Abstract
+- 1. Introduction
+- 2. AMMs and Liquidity Provision
+- 3. LP Risk and Performance Measures
+  - 3.1 Impermanent Loss
+  - 3.2 Loss-Versus-Rebalancing
+  - 3.3 Predictable Loss
+- 4. Data and Empirical Design
+- 5. Empirical Results
+  - 5.1 Explanatory Power for LP Returns
+  - 5.2 Comparison across Risk Measures
+  - 5.3 Regime-Dependent Explanatory Power
+- 6. Conclusion
 
 ## Repository structure
 
 | Path | Purpose |
 | --- | --- |
 | [`flow.md`](flow.md) | End-to-end research workflow and stage gates |
-| [`data/`](data/) | Data sourcing, provenance, processing layers, and validation methodology |
-| [`research-reference/`](research-reference/) | Literature catalog, review categories, and citation rules |
-| [`analysis/`](analysis/) | Planned metrics, analytical stages, and reproducibility rules |
-| [`paper/`](paper/) | Planned TeX manuscript, generated figures and tables, and final PDF |
+| [`data/`](data/) | Data scope, provenance, processing, and validation methodology |
+| [`analysis/`](analysis/) | Metric construction and empirical-analysis roadmap |
+| [`research-reference/`](research-reference/) | Literature catalog and citation rules |
+| [`paper/`](paper/) | Manuscript structure and publication workflow |
 
 ## Research principles
 
-- **On-chain first:** treat Ethereum records and identified Uniswap V3 contract
-  events as the canonical evidence. Any indexer must be reconciled against them.
-- **Predeclare choices:** record the study window, pool filters, benchmarks,
-  exclusions, and model specifications before confirmatory analysis.
-- **Preserve provenance:** trace every derived value to a source, block range,
-  query or transformation version, configuration, and checksum where practical.
-- **Separate data layers:** keep immutable source extracts distinct from cleaned
-  and derived datasets.
-- **Prevent look-ahead:** construct every metric using information available at
-  the evaluated block or timestamp unless a documented analysis explicitly
-  requires otherwise.
-- **Make results reproducible:** record environment, configuration, random seeds,
-  and exact commands once the analysis implementation is added.
+- Use canonical on-chain records as the primary evidence and reconcile
+  accelerated data sources against them.
+- Predeclare the pool, study window, position rules, return construction, metric
+  definitions, regime variables, and empirical specifications.
+- Preserve provenance across immutable raw, processed, and derived data layers.
+- Prevent look-ahead in historical outcomes, measures, and regime assignments.
+- Make every reported table and figure reproducible from versioned inputs,
+  configuration, and code.
 
-## Project status
-
-- [x] Define the initial repository and documentation structure.
-- [ ] Freeze the study period and pool-selection criteria.
-- [ ] Select and document data access methods.
-- [ ] Build and validate the data pipeline.
-- [ ] Implement and test the LP risk metrics.
-- [ ] Add and review research references.
-- [ ] Run the empirical analysis and robustness checks.
-- [ ] Add the TeX manuscript and generate `paper/paper.pdf`.
-
-## Contributing and citation
-
-Contributions should state which research question they address, identify all
-data and methodological assumptions, and avoid presenting unverified outputs as
-findings. Reference material must follow the catalog and rights guidance in
-[`research-reference/README.md`](research-reference/README.md).
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the fork and branch workflows,
-validation requirements, pull request checklist, and merge policy.
-
-A project license and formal citation format have not yet been selected. Until
-they are added, do not assume that repository contents may be redistributed
-under a particular open-source or open-data license.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution and review
+requirements.
 
 ## Disclaimer
 
-This repository is for open research and education. It does not provide
-financial, investment, legal, or tax advice. DeFi positions can lose some or all
-of their value, and future empirical results will not guarantee future outcomes.
+This repository is for research and education. It does not provide financial,
+investment, legal, or tax advice. DeFi positions can lose some or all of their
+value, and future empirical results will not guarantee future outcomes.
