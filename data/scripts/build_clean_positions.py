@@ -22,6 +22,7 @@ from uniswap_v3_data.positions import (
     reconstruct_positions_from_links,
     summarize_pool_daily,
 )
+from uniswap_v3_data.paths import initialize_data_root, resolve_data_root
 
 
 def write_parquet(frame: pd.DataFrame, path: Path) -> None:
@@ -55,24 +56,26 @@ def main() -> None:
         default=DATA_DIR / "config" / "selected_pool.json",
     )
     parser.add_argument("--project", help="override config project for validation")
-    parser.add_argument("--data-root", type=Path, default=DATA_DIR)
-    parser.add_argument("--metadata-root", type=Path, default=DATA_DIR / "metadata")
+    parser.add_argument("--data-root", type=Path)
+    parser.add_argument("--metadata-root", type=Path)
     args = parser.parse_args()
 
-    config = load_config(args.config, args.project)
+    data_root = initialize_data_root(resolve_data_root(args.data_root))
+    metadata_root = args.metadata_root or data_root / ".runs"
+    config = load_config(args.config, args.project, require_project=False)
     run_id = collection_run_id(config)
     raw_paths = sorted(
-        (args.data_root / "raw" / "bigquery" / run_id / "events").glob("*.parquet")
+        (data_root / "raw" / "bigquery" / run_id / "events").glob("*.parquet")
     )
     raw_block_paths = sorted(
-        (args.data_root / "raw" / "bigquery" / run_id / "block_daily").glob("*.parquet")
+        (data_root / "raw" / "bigquery" / run_id / "block_daily").glob("*.parquet")
     )
     if not raw_paths:
         raise FileNotFoundError(
             "no raw event parquet files; run data/scripts/collect_bigquery.py --execute first"
         )
 
-    processed_root = args.data_root / "processed"
+    processed_root = data_root / "processed"
     all_links: list[pd.DataFrame] = []
     all_daily: list[pd.DataFrame] = []
     processed_nfpm_paths: list[Path] = []
@@ -171,11 +174,11 @@ def main() -> None:
         / "target_nfpm_events.parquet",
         "pool_daily": processed_root / "pool_daily" / "pool_daily.parquet",
         "block_daily": processed_root / "block_daily" / "block_daily.parquet",
-        "all_positions": args.data_root
+        "all_positions": data_root
         / "derived"
         / "positions"
         / "all_target_positions.parquet",
-        "clean_positions": args.data_root
+        "clean_positions": data_root
         / "derived"
         / "positions"
         / "clean_closed_positions.parquet",
@@ -210,7 +213,8 @@ def main() -> None:
     }
     qc = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "config_path": str(args.config.resolve()),
+        "config": args.config.name,
+        "config_sha256": sha256(args.config),
         "raw_file_count": len(raw_paths),
         "raw_row_count": raw_rows,
         "pool_event_count": pool_rows,
@@ -224,7 +228,7 @@ def main() -> None:
         "exclusion_counts_nonexclusive": exclusion_counts,
         "outputs": {
             name: {
-                "path": str(path),
+                "path": path.relative_to(data_root).as_posix(),
                 "row_count": int(
                     {
                         "links": len(links),
@@ -241,7 +245,7 @@ def main() -> None:
             if path.exists()
         },
     }
-    qc_path = args.metadata_root / "processing" / "build_clean_positions_qc.json"
+    qc_path = metadata_root / "processing" / "build_clean_positions_qc.json"
     write_json(qc_path, qc)
     print(
         f"built {len(positions):,} target positions; {len(clean):,} are clean-closed. "
