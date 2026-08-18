@@ -34,7 +34,7 @@ versioned design revision rather than an undocumented adjustment.
 | Stage | Inputs | Required output | Gate to continue |
 | --- | --- | --- | --- |
 | 1. Research framing | IL, LVR, PL, realized LP return, and prior literature | Two bounded research questions and documented measure concepts | Scope is limited to explanatory power and regime dependence |
-| 2. Empirical design | Research framing | Selected pool, exact four-year period, position rules, outcome and measure definitions, regimes, and model plan | All confirmatory choices are versioned |
+| 2. Collection design | Research framing | Fixed-pool snapshot, source/storage plan, and exploratory reconstruction rules | Pool identity, snapshot, budget, and provenance choices are versioned |
 | 3. Data collection | Frozen design and source plan | Immutable pool, position, benchmark, and regime extracts plus provenance | Chain, pool, period, source, and retrieval details are recorded |
 | 4. Data validation | Raw extracts | QA report and validated processed datasets | Coverage, identity, decoding, units, ordering, and reconciliation checks pass |
 | 5. Position reconstruction | Validated data | Actual LP cash flows, inventory, fees, ending values, and realized returns | Position and return accounting identities pass declared tolerances |
@@ -45,19 +45,23 @@ versioned design revision rather than an undocumented adjustment.
 
 ## Stage gates
 
-### 1. Design freeze
+### 1. Collection and analysis design freeze
 
-Before bulk collection or confirmatory analysis, record:
+Before bulk collection, record:
 
-- the selected WETH/USDT pool address and fee tier;
-- the start and end blocks or timestamps spanning four years;
+- the fixed WETH/USDT 0.05% pool identity, creation block, and data-snapshot cutoff;
+- data providers, storage location, finality policy, and numerical integrity checks.
+
+After full-history position EDA and before confirmatory analysis, record:
+
+- the EDA-supported analytical start/end blocks or timestamps;
 - actual LP-position inclusion, exclusion, and ownership rules;
 - realized-return construction, horizon, valuation convention, and treatment of
   fee income;
 - IL, LVR, and PL formulas, benchmarks, units, horizons, and timing;
 - candidate regime variables, feature windows, and assignment method;
 - model specifications, comparison criteria, and sensitivity checks; and
-- data providers, finality policy, and numerical tolerances.
+- numerical tolerances for outcome, measure, and model validation.
 
 Exploratory work may inform these choices, but exploratory and confirmatory
 outputs must remain distinguishable.
@@ -65,9 +69,9 @@ outputs must remain distinguishable.
 ### 2. Raw-data integrity
 
 Raw data cannot advance when its chain identity, selected pool identity,
-four-year coverage, event ordering, token-unit interpretation, or provenance is
-unknown. The validation report must document duplicates, missing blocks,
-provider disagreement, and chain reorganizations.
+declared-interval coverage, event ordering, token-unit interpretation, or
+provenance is unknown. The validation report must document duplicates, missing
+blocks, provider disagreement, and chain reorganizations.
 
 ### 3. Position and measure reconciliation
 

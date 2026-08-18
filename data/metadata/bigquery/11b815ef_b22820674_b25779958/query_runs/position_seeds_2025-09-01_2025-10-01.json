@@ -1,0 +1,22 @@
+{
+  "status": "complete",
+  "kind": "position_seeds",
+  "start_date": "2025-09-01",
+  "end_date": "2025-10-01",
+  "project": "uniswapdata",
+  "location": "US",
+  "source_table": "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events",
+  "job_id": "e315cb2b-d807-4e5c-b4d9-949c3f8a78b6",
+  "row_count": 0,
+  "target_token_id_count": null,
+  "estimated_bytes": 34276518971,
+  "total_bytes_processed": 34269545820,
+  "total_bytes_billed": 34269560832,
+  "maximum_bytes_billed": 37704170869,
+  "cache_hit": false,
+  "sql_path": "data/metadata/bigquery/11b815ef_b22820674_b25779958/sql/position_seeds_2025-09-01_2025-10-01.sql",
+  "output_path": "data/raw/bigquery/11b815ef_b22820674_b25779958/position_seeds/position_seeds_2025-09-01_2025-10-01.parquet",
+  "output_size_bytes": 6338,
+  "output_sha256": "cf9e2f25130c12f1b6c66714807843f79d0d83b171a339fcd57441e54a32b9e2",
+  "completed_at_utc": "2026-08-18T06:24:26.168702+00:00"
+}

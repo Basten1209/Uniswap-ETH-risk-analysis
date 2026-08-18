@@ -1,18 +1,23 @@
 # Data Methodology
 
-This directory documents how the project will collect, preserve, transform, and
-validate data for the WETH/USDT case study. It currently contains documentation
-only; no datasets or download pipeline have been added.
+This directory documents and implements collection, preservation,
+transformation, and validation for the WETH/USDT case study. The executable
+BigQuery-to-clean-position workflow is described in
+[`PIPELINE.md`](PIPELINE.md), with output fields in
+[`DATA_DICTIONARY.md`](DATA_DICTIONARY.md). Generated datasets remain local and
+are not committed.
 
 See the [research flow](../flow.md) for the gates that data must pass before it
 can support analysis.
 
 ## Data scope
 
-The dataset will cover one Uniswap V3 WETH/USDT pool on Ethereum Mainnet for
-four years. WETH is the on-chain representation of ETH. The unit of analysis is
-the actual on-chain LP position, and the analytical outcome is realized LP
-return.
+The dataset covers the fixed Uniswap V3 WETH/USDT 0.05% pool
+`0x11b815efb8f581194ae79006d24e0d814b7697f6` on Ethereum Mainnet. WETH is the
+on-chain representation of ETH. The unit of analysis is the actual on-chain LP
+position, and the analytical outcome is realized LP return. The collection
+preserves the full available pool history; the research sample window is chosen
+only after exploratory data analysis.
 
 The following scope is fixed:
 
@@ -20,21 +25,28 @@ The following scope is fixed:
 | --- | --- |
 | Network | Ethereum Mainnet |
 | Protocol | Uniswap V3 |
-| Pair and pool count | WETH/USDT, one pool |
-| Study length | Four years |
+| Pair and pool count | WETH/USDT 0.05%, one fixed pool |
+| Collection interval | Pool's `PoolCreated` block through the latest finalized BigQuery snapshot |
 | Observation unit | Actual LP position |
 | Required analytical outputs | Realized return, IL, LVR, PL, and market-regime variables |
 
-The following implementation choices remain TBD and must be versioned before
-bulk collection:
+The following collection choices must be supplied and versioned before bulk
+collection:
 
-- exact pool contract address and fee tier;
-- start and end blocks or timestamps for the four-year window;
-- LP-position inclusion, exclusion, and ownership rules;
-- outcome and measure horizons;
-- sampling frequency and finality policy;
-- reference-price and benchmark inputs required by IL, LVR, and PL; and
-- primary data-access provider and fallback provider.
+- snapshot finality depth;
+- Google Cloud billing project and BigQuery budget; and
+- canonical large-data storage location.
+
+The preparation query verifies the fixed address, token pair and fee tier
+against the canonical Factory, then writes the creation block and exact latest
+cutoff to `config/selected_pool.json`. Google Cloud Blockchain Analytics
+BigQuery tables are the primary extraction source. Direct Ethereum RPC is
+reserved for validation and fallback checks.
+
+LP-position filters, analytical start/end dates, outcome horizons, sampling
+frequency, and reference-price rules are analysis choices. They are frozen
+after EDA in a separate analysis configuration rather than limiting raw-data
+collection.
 
 ## Source domains
 
@@ -78,8 +90,11 @@ data/
   PL, and regime features without overwriting source layers.
 - **Metadata:** make every layer traceable without relying on filenames alone.
 
-Large datasets may ultimately live outside Git. The storage mechanism, retention
-policy, and download interface remain TBD.
+Large datasets live outside Git under a configurable data root (an external
+disk for local extraction or Google Cloud Storage for server-side export). Only
+code, configuration, manifests, schemas, checksums, and QA summaries belong in
+the repository. See [`STORAGE_POLICY.md`](STORAGE_POLICY.md) for the complete
+storage, retention, and recovery rules.
 
 ## Provenance record
 
@@ -90,7 +105,7 @@ Every collected or generated dataset should carry at least:
 | Dataset identifier and version | Stable name for the exact extract or transformation |
 | Network and chain ID | Evidence that records come from Ethereum Mainnet |
 | Pool and contracts | Selected pool, token contracts, fee tier, and ABI revisions |
-| Block or time range | Inclusive four-year boundaries and any known gaps |
+| Block or time range | Half-open `[start, end)` UTC interval, block boundaries, and any known gaps |
 | Source | Provider, endpoint class, dataset release, or node configuration |
 | Retrieval time | UTC time at which the source was queried or copied |
 | Query or transform version | Repository revision and entry point that produced the data |
@@ -105,8 +120,8 @@ summary. At minimum, the implemented pipeline must check:
 
 1. **Network and pool identity:** chain ID, block hashes, token ordering, fee
    tier, ABI, and contracts match the declared Ethereum Mainnet pool.
-2. **Coverage:** the complete four-year interval is accounted for, including
-   explicit records of gaps, retries, and provider limits.
+2. **Coverage:** the complete declared collection interval is accounted for,
+   including explicit records of gaps, retries, and provider limits.
 3. **Uniqueness and ordering:** event identity, transaction order, and log order
    are stable; duplicate ingestion is rejected or deterministically removed.
 4. **Decoding:** events use the intended contract ABI, and unknown or failed
@@ -139,5 +154,5 @@ before the data-quality gate becomes operational.
 - Link every derived dataset to the outcome, risk measure, or regime analysis
   that consumes it.
 
-No data source, storage format, schema, or provider is selected by this
-documentation.
+Executable commands, selected formats, expected outputs, and the inputs needed
+to run the collection are documented in [`PIPELINE.md`](PIPELINE.md).

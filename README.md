@@ -32,14 +32,15 @@ or the evaluation of a particular liquidity-management strategy.
 | --- | --- |
 | Network | Ethereum Mainnet |
 | Protocol | Uniswap V3 |
-| Pool | One WETH/USDT pool; WETH is the on-chain representation of ETH |
-| Study length | Four years |
+| Pool | Fixed WETH/USDT 0.05% pool (`0x11b8…97f6`) verified against the V3 Factory |
+| Collection interval | Pool creation through the latest finalized BigQuery snapshot |
 | Unit of analysis | Actual on-chain LP positions |
 | Outcome | Realized LP return |
 
-The exact pool address and fee tier, calendar or block boundaries, data
-providers, position filters, return horizon, and sampling frequency remain to be
-fixed in the empirical design.
+The collection pipeline freezes the exact creation and cutoff blocks. Position
+filters, the analytical window, return horizon, and sampling frequency are
+chosen after full-history EDA and then frozen in the empirical design. See the
+versioned BigQuery workflow in [`data/`](data/).
 
 ## Risk measures and outcome
 

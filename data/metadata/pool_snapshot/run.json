@@ -1,0 +1,18 @@
+{
+  "mode": "execute",
+  "created_at_utc": "2026-08-18T06:17:09.707727+00:00",
+  "fixed_pool": "0x11b815efb8f581194ae79006d24e0d814b7697f6",
+  "fixed_fee_tier": 500,
+  "lookback_days": 14,
+  "finality_blocks": 64,
+  "estimated_bytes_processed": 11033039438,
+  "estimated_gib_processed": 10.275318695232272,
+  "sql_path": "data/metadata/pool_snapshot/prepare_fixed_pool.sql",
+  "status": "complete",
+  "job_id": "cb732b01-5e2c-40fe-84f0-c5d3d17d5b51",
+  "output_config": "/Users/seungjun/conductor/workspaces/uniswap-eth-risk-analysis/osaka/data/config/selected_pool.json",
+  "start_block": 12376751,
+  "end_block_exclusive": 25779958,
+  "total_bytes_processed": 1081573860,
+  "total_bytes_billed": 1082130432
+}
