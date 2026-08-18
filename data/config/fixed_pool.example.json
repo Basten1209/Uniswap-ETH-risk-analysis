@@ -1,0 +1,23 @@
+{
+  "project": "YOUR_GOOGLE_CLOUD_PROJECT_ID",
+  "location": "US",
+  "network": "ethereum-mainnet",
+  "factory_address": "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+  "pool_address": "0x11b815efb8f581194ae79006d24e0d814b7697f6",
+  "nfpm_address": "0xc36442b4a4522e871399cd717abdd847ab11fe88",
+  "fee_tier": 500,
+  "token0": {
+    "symbol": "WETH",
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "decimals": 18
+  },
+  "token1": {
+    "symbol": "USDT",
+    "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+    "decimals": 6
+  },
+  "bigquery": {
+    "events_table": "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events",
+    "blocks_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
+  }
+}

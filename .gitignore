@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Machine-local billing settings; selected_pool.json is research metadata
+data/config/*.local.json
+data/raw/
+data/processed/
+data/derived/
+data/external/
