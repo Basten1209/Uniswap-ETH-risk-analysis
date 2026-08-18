@@ -4,8 +4,9 @@ This repository is an open research workspace for an empirical comparison of
 risk measures for Uniswap V3 liquidity providers (LPs). The study asks when,
 why, and how much each measure helps explain realized LP returns.
 
-The repository is currently in its documentation and research-design stage. It
-does not yet contain datasets, analysis code, TeX sources, or empirical results.
+The repository contains the versioned collection and position-reconstruction
+code plus a checksum manifest. Large data artifacts live outside Git at
+`~/Data/uniswapdata`; empirical analysis and paper results are still in progress.
 
 ## Research questions
 
@@ -37,10 +38,12 @@ or the evaluation of a particular liquidity-management strategy.
 | Unit of analysis | Actual on-chain LP positions |
 | Outcome | Realized LP return |
 
-The collection pipeline freezes the exact creation and cutoff blocks. Position
+The collection pipeline freezes the exact creation and cutoff blocks. Use the
+single [data access and transfer guide](data/README.md) to initialize, receive,
+verify, reproduce, or rebuild the external dataset. Position
 filters, the analytical window, return horizon, and sampling frequency are
 chosen after full-history EDA and then frozen in the empirical design. See the
-versioned BigQuery workflow in [`data/`](data/).
+versioned manifest and BigQuery workflow in [`data/`](data/).
 
 ## Risk measures and outcome
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -83,7 +84,10 @@ def _token(payload: dict[str, Any], field: str) -> TokenConfig:
 
 
 def load_config(
-    path: str | Path, project_override: str | None = None
+    path: str | Path,
+    project_override: str | None = None,
+    *,
+    require_project: bool = True,
 ) -> ResearchConfig:
     path = Path(path)
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -96,8 +100,14 @@ def load_config(
     end_block_exclusive = int(payload["end_block_exclusive"])
     if start_block < 0 or end_block_exclusive <= start_block:
         raise ValueError("invalid half-open block range")
-    project = (project_override or str(payload["project"])).strip()
-    if not project or project == "YOUR_GOOGLE_CLOUD_PROJECT_ID":
+    project = str(
+        project_override
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or payload.get("project", "")
+    ).strip()
+    if project == "YOUR_GOOGLE_CLOUD_PROJECT_ID":
+        project = ""
+    if require_project and not project:
         raise ValueError(
             "set a real Google Cloud project ID in the config or --project"
         )
@@ -149,7 +159,11 @@ def load_fixed_pool_config(
     path = Path(path)
     payload = json.loads(path.read_text(encoding="utf-8"))
     bigquery = payload["bigquery"]
-    project = (project_override or str(payload["project"])).strip()
+    project = str(
+        project_override
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or payload.get("project", "")
+    ).strip()
     if not project or project == "YOUR_GOOGLE_CLOUD_PROJECT_ID":
         raise ValueError(
             "set a real Google Cloud project ID in the config or --project"

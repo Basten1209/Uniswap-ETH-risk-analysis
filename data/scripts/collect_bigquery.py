@@ -24,6 +24,7 @@ from uniswap_v3_data.events import (
     POOL_SIGNATURES,
     SIGNATURE_TO_TOPIC,
 )
+from uniswap_v3_data.paths import initialize_data_root, resolve_data_root
 
 BLOCK_OPTIONAL_COLUMNS = (
     "base_fee_per_gas",
@@ -220,8 +221,19 @@ def execute_plan(
         "total_bytes_billed": int(job.total_bytes_billed or 0),
         "maximum_bytes_billed": maximum or None,
         "cache_hit": bool(job.cache_hit),
-        "sql_path": plan["sql_path"],
-        "output_path": target,
+        "sql_path": str(
+            Path("bigquery")
+            / collection_run_id(config)
+            / "sql"
+            / plan["sql_path"].name
+        ),
+        "output_path": str(
+            Path("raw")
+            / "bigquery"
+            / collection_run_id(config)
+            / plan["kind"]
+            / target.name
+        ),
         "output_size_bytes": target.stat().st_size,
         "output_sha256": sha256(target),
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -249,10 +261,8 @@ def main() -> None:
     parser.add_argument(
         "--project", help="override the billing/quota project in config"
     )
-    parser.add_argument(
-        "--data-root", "--out-root", dest="out_root", type=Path, default=DATA_DIR
-    )
-    parser.add_argument("--metadata-root", type=Path, default=DATA_DIR / "metadata")
+    parser.add_argument("--data-root", "--out-root", dest="out_root", type=Path)
+    parser.add_argument("--metadata-root", type=Path)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument(
         "--budget-bytes",
@@ -268,12 +278,14 @@ def main() -> None:
     if args.max_jobs is not None and args.max_jobs <= 0:
         raise ValueError("--max-jobs must be positive")
 
+    data_root = initialize_data_root(resolve_data_root(args.out_root))
+    metadata_base = args.metadata_root or data_root / ".runs"
     config = load_config(args.config, args.project)
     client = bigquery.Client(project=config.project, location=config.location)
     columns = block_columns(client, config)
     run_id = collection_run_id(config)
-    raw_root = args.out_root / "raw" / "bigquery" / run_id
-    metadata_root = args.metadata_root / "bigquery" / run_id
+    raw_root = data_root / "raw" / "bigquery" / run_id
+    metadata_root = metadata_base / "bigquery" / run_id
     plans: list[dict[str, Any]] = []
 
     for start, end in monthly_ranges(config.start_date, config.end_date):
@@ -322,7 +334,8 @@ def main() -> None:
     plan_payload = {
         "mode": "execute" if args.execute else "dry-run",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "config_path": str(args.config.resolve()),
+        "config_file": args.config.name,
+        "config_sha256": sha256(args.config),
         "config": asdict(config),
         "block_columns": columns,
         "planned_job_count": len(plans),
@@ -331,7 +344,22 @@ def main() -> None:
         "estimated_gib_processed": total / 2**30,
         "budget_bytes": args.budget_bytes,
         "jobs": [
-            {key: value for key, value in plan.items() if key not in {"sql"}}
+            {
+                "kind": plan["kind"],
+                "start": plan["start"],
+                "end": plan["end"],
+                "estimated_bytes": plan["estimated_bytes"],
+                "sql_sha256": hashlib.sha256(
+                    (plan["sql"] + "\n").encode()
+                ).hexdigest(),
+                "target": str(
+                    Path("raw")
+                    / "bigquery"
+                    / run_id
+                    / plan["kind"]
+                    / plan["target"].name
+                ),
+            }
             for plan in plans
         ],
     }

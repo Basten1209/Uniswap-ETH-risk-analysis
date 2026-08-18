@@ -8,3 +8,5 @@ data/raw/
 data/processed/
 data/derived/
 data/external/
+data/.runs/
+data/.staging/

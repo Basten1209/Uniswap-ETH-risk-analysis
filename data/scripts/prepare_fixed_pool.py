@@ -18,6 +18,7 @@ DATA_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DATA_DIR / "src"))
 
 from uniswap_v3_data.config import FixedPoolConfig, load_fixed_pool_config
+from uniswap_v3_data.paths import initialize_data_root, resolve_data_root
 
 POOL_CREATED_SIGNATURE = "PoolCreated(address,address,uint24,int24,address)"
 EXPECTED_CREATION_BLOCK = 12_376_751
@@ -89,7 +90,8 @@ def main() -> None:
     parser.add_argument(
         "--output", type=Path, default=DATA_DIR / "config" / "selected_pool.json"
     )
-    parser.add_argument("--metadata-root", type=Path, default=DATA_DIR / "metadata")
+    parser.add_argument("--data-root", type=Path)
+    parser.add_argument("--metadata-root", type=Path)
     parser.add_argument("--lookback-days", type=int, default=14)
     parser.add_argument("--finality-blocks", type=int, default=64)
     parser.add_argument("--execute", action="store_true")
@@ -101,9 +103,10 @@ def main() -> None:
         raise ValueError("--lookback-days must be at least 2")
     if args.finality_blocks < 0:
         raise ValueError("--finality-blocks cannot be negative")
+    data_root = initialize_data_root(resolve_data_root(args.data_root))
     config = load_fixed_pool_config(args.config, args.project)
     sql = build_snapshot_query(config, args.lookback_days, args.finality_blocks)
-    metadata_root = args.metadata_root / "pool_snapshot"
+    metadata_root = (args.metadata_root or data_root / ".runs") / "pool_snapshot"
     sql_path = metadata_root / "prepare_fixed_pool.sql"
     sql_path.parent.mkdir(parents=True, exist_ok=True)
     sql_path.write_text(sql + "\n", encoding="utf-8")
@@ -124,7 +127,7 @@ def main() -> None:
         "finality_blocks": args.finality_blocks,
         "estimated_bytes_processed": estimated,
         "estimated_gib_processed": estimated / 2**30,
-        "sql_path": sql_path,
+        "sql_path": "pool_snapshot/prepare_fixed_pool.sql",
     }
     write_json(metadata_root / "plan.json", plan)
     print(json.dumps(plan, ensure_ascii=False, indent=2, default=str))
@@ -167,7 +170,6 @@ def main() -> None:
     snapshot_timestamp = pd.to_datetime(row["snapshot_end_timestamp"], utc=True)
     end_date = snapshot_timestamp.date() + timedelta(days=1)
     selected = {
-        "project": config.project,
         "location": config.location,
         "network": config.network,
         "pool_address": config.pool_address,
@@ -203,7 +205,7 @@ def main() -> None:
             **plan,
             "status": "complete",
             "job_id": job.job_id,
-            "output_config": args.output,
+            "output_config": args.output.name,
             "start_block": selected["start_block"],
             "end_block_exclusive": selected["end_block_exclusive"],
             "total_bytes_processed": int(job.total_bytes_processed or 0),

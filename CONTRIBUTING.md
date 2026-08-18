@@ -153,9 +153,11 @@ Before requesting approval, document:
 - a checksum or other integrity identifier; and
 - why a repository copy is necessary for the research.
 
-Prefer metadata, persistent links, and reproducible retrieval instructions over
-copied files. Clearly labeled synthetic fixtures may be included when they are
-small and required for tests.
+Prefer the single `data/manifest.json`, persistent links, and reproducible
+retrieval instructions over copied files. Store actual data outside every Git
+checkout at `~/Data/uniswapdata` (or the explicitly configured external root),
+as described in [the data guide](data/README.md). Clearly labeled synthetic
+fixtures may be included when they are small and required for tests.
 
 Never commit credentials, private RPC URLs, personal data, confidential
 material, or content whose redistribution rights are unclear. Keep local secrets
@@ -196,9 +198,10 @@ Also complete the checks that match your contribution:
 - **Documentation:** inspect the rendered Markdown, test every changed relative
   link, and confirm that command examples match the current repository.
 
-The repository does not yet have a shared runtime or CI command. Do not invent a
-test result. If an automated check is unavailable, state `Not run`, explain why,
-and describe the manual validation performed.
+For data-pipeline changes, install `data/requirements.txt` and run
+`python -m pytest -q data/tests`. Do not invent a test result. If another
+automated check is unavailable, state `Not run`, explain why, and describe the
+manual validation performed.
 
 ## Open the pull request
 
