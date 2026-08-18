@@ -33,6 +33,7 @@ POOL = "0x11b815efb8f581194ae79006d24e0d814b7697f6"
 NFPM = "0xc36442b4a4522e871399cd717abdd847ab11fe88"
 FACTORY = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
 EVENTS = "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events"
+LOGS = "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs"
 BLOCKS = "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
 
 
@@ -49,6 +50,7 @@ class BigQuerySqlTest(unittest.TestCase):
             token0=WETH,
             token1=USDT,
             events_table=EVENTS,
+            logs_table=LOGS,
             blocks_table=BLOCKS,
         )
         self.research = ResearchConfig(
@@ -65,6 +67,7 @@ class BigQuerySqlTest(unittest.TestCase):
             start_block=12_000_000,
             end_block_exclusive=24_000_001,
             events_table=EVENTS,
+            logs_table=LOGS,
             blocks_table=BLOCKS,
         )
 
@@ -87,21 +90,18 @@ class BigQuerySqlTest(unittest.TestCase):
         self.assertIn("latest_decoded_block - 64", sql)
         self.assertIn(BLOCKS, sql)
 
-    def test_seed_and_event_queries_are_target_only_and_block_bounded(self) -> None:
-        seed_sql = collect_bigquery.build_position_seed_query(
-            self.research, date(2022, 1, 1), date(2022, 2, 1)
-        )
+    def test_raw_log_query_is_contract_topic_and_block_bounded(self) -> None:
         event_sql = collect_bigquery.build_events_query(
             self.research, date(2022, 1, 1), date(2022, 2, 1)
         )
-        self.assertIn(POOL, seed_sql)
-        self.assertIn(NFPM, seed_sql)
-        self.assertIn("p.log_index < n.log_index", seed_sql)
-        self.assertIn("@target_token_ids", event_sql)
-        self.assertIn("STRING(args[2]) IN UNNEST(@target_token_ids)", event_sql)
+        self.assertIn(LOGS, event_sql)
+        self.assertIn(POOL, event_sql)
+        self.assertIn(NFPM, event_sql)
+        self.assertIn("topics[SAFE_OFFSET(0)]", event_sql)
+        self.assertIn("TO_JSON_STRING(topics) AS topics_json", event_sql)
+        self.assertIn("removed IS NOT TRUE", event_sql)
         self.assertIn("block_number >= 12000000", event_sql)
         self.assertIn("block_number < 24000001", event_sql)
-        self.assertNotIn("removed", event_sql)
 
     def test_block_query_aggregates_before_download(self) -> None:
         sql = collect_bigquery.build_blocks_query(

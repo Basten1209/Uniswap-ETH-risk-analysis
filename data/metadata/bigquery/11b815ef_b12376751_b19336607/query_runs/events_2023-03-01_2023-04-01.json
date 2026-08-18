@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "kind": "events",
+  "start_date": "2023-03-01",
+  "end_date": "2023-04-01",
+  "project": "uniswapdata3",
+  "location": "US",
+  "source_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
+  "job_id": "5e44b54b-741e-4db0-ad59-5a10ebe2cafc",
+  "row_count": 318040,
+  "estimated_bytes": 38443911483,
+  "total_bytes_processed": 38365452920,
+  "total_bytes_billed": 38366347264,
+  "maximum_bytes_billed": 42288302632,
+  "cache_hit": false,
+  "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-03-01_2023-04-01.sql",
+  "output_path": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-03-01_2023-04-01.parquet",
+  "output_size_bytes": 23268863,
+  "output_sha256": "8dc0baed4448cda2356830a57d918701a5a116a8c098c3746bc268bbbbf46b0a",
+  "completed_at_utc": "2026-08-18T08:05:24.227504+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "kind": "events",
+  "start_date": "2026-05-01",
+  "end_date": "2026-06-01",
+  "project": "uniswapdata",
+  "location": "US",
+  "source_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
+  "job_id": "4ce74d11-6292-4b7e-bd9a-768fcf4133d8",
+  "row_count": 240505,
+  "estimated_bytes": 85670910463,
+  "total_bytes_processed": 85363168317,
+  "total_bytes_billed": 85363523584,
+  "maximum_bytes_billed": 94238001510,
+  "cache_hit": false,
+  "sql_path": "data/metadata/bigquery/11b815ef_b23914921_b25779958/sql/events_2026-05-01_2026-06-01.sql",
+  "output_path": "data/raw/bigquery/11b815ef_b23914921_b25779958/events/events_2026-05-01_2026-06-01.parquet",
+  "output_size_bytes": 15224095,
+  "output_sha256": "185852873aca3def4fa81f71e6f87e3e7eab668c79dce66ba48bd1bdfb7ad93b",
+  "completed_at_utc": "2026-08-18T06:41:43.901532+00:00"
+}

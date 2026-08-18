@@ -7,13 +7,14 @@
 
 | 파일군 | 의미 |
 | --- | --- |
-| `position_seeds/*.parquet` | 고정 pool core Mint와 NFPM Increase를 연결해 얻은 target tokenId와 range |
-| `events/*.parquet` | 고정 pool event와 target tokenId의 NFPM lifecycle만 포함한 월별 records |
+| `events/*.parquet` | 고정 pool 핵심 event와 canonical NFPM lifecycle event를 담은 월별 raw logs |
 | `block_daily/*.parquet` | BigQuery에서 월별로 계산한 일별 block count, base fee, gas utilization |
 
-모든 raw query는 `selected_pool.json`의 반개구간
+모든 raw query는 선택한 shard config의 반개구간
 `[start_block, end_block_exclusive)`와 월별 UTC timestamp partition 조건을 동시에
-적용한다.
+적용한다. NFPM raw logs에는 다른 V3 pool의 token ID도 포함되며, processed layer에서
+고정 pool `Mint`와 같은 transaction의 `IncreaseLiquidity`를 금액·유동성·log 순서로
+연결해 target token ID만 결정한다.
 
 ## `clean_closed_positions.parquet`
 

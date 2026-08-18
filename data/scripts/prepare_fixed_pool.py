@@ -181,6 +181,7 @@ def main() -> None:
         "end_block_exclusive": int(row["snapshot_end_block_inclusive"]) + 1,
         "bigquery": {
             "events_table": config.events_table,
+            "logs_table": config.logs_table,
             "blocks_table": config.blocks_table,
         },
         "pool_snapshot": {

@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "kind": "block_daily",
+  "start_date": "2022-04-01",
+  "end_date": "2022-05-01",
+  "project": "uniswapdata3",
+  "location": "US",
+  "source_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks",
+  "job_id": "73b7ad27-4f70-4227-a91c-428aa093eaf6",
+  "row_count": 30,
+  "estimated_bytes": 7665120,
+  "total_bytes_processed": 7663840,
+  "total_bytes_billed": 10485760,
+  "maximum_bytes_billed": 10485760,
+  "cache_hit": false,
+  "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-04-01_2022-05-01.sql",
+  "output_path": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-04-01_2022-05-01.parquet",
+  "output_size_bytes": 10154,
+  "output_sha256": "e4e5e49de29aaf7f7b7d5b48d96157c490f08e7f61849c8e25ead56a1b82381e",
+  "completed_at_utc": "2026-08-18T07:55:49.284161+00:00"
+}

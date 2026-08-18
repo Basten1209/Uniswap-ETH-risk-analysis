@@ -18,6 +18,7 @@
   },
   "bigquery": {
     "events_table": "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events",
+    "logs_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
     "blocks_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
   }
 }

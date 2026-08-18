@@ -1,0 +1,46 @@
+{
+  "run_id": "11b815ef_b19336607_b19771560",
+  "verified_at_utc": "2026-08-18T07:35:28Z",
+  "project": "uniswapdata2",
+  "configured_block_range": {
+    "start_inclusive": 19336607,
+    "end_exclusive": 19771560
+  },
+  "observed_event_range": {
+    "first_block": 19336612,
+    "last_block": 19771556
+  },
+  "file_counts": {
+    "events": 2,
+    "block_daily": 2,
+    "total_parquet": 4,
+    "query_runs": 4,
+    "partial": 0
+  },
+  "row_counts": {
+    "events": 479934,
+    "block_daily": 61
+  },
+  "query_usage": {
+    "total_bytes_processed": 79234283544,
+    "total_gib_processed": 73.79267694801092,
+    "total_bytes_billed": 79238791168,
+    "total_gib_billed": 73.796875
+  },
+  "raw_output": {
+    "bytes": 36646463,
+    "mib": 34.948790550231934
+  },
+  "checks": {
+    "all_query_runs_complete": true,
+    "all_sha256_match": true,
+    "all_row_counts_match": true,
+    "all_observed_blocks_within_configured_range": true,
+    "block_daily_has_61_unique_contiguous_dates": true,
+    "next_shard_boundary_matches_19771560": true
+  },
+  "remaining_historical_range": {
+    "start_inclusive": 12376751,
+    "end_exclusive": 19336607
+  }
+}

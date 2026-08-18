@@ -16,16 +16,17 @@
     "decimals": 6
   },
   "start_date": "2021-05-05",
-  "end_date": "2025-07-01",
+  "end_date": "2025-12-01",
   "start_block": 12376751,
-  "end_block_exclusive": 22820674,
+  "end_block_exclusive": 23914921,
   "bigquery": {
     "events_table": "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events",
+    "logs_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
     "blocks_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
   },
   "shard": {
     "role": "historical-handoff",
-    "boundary_timestamp_utc": "2025-07-01T00:00:11+00:00",
+    "boundary_timestamp_utc": "2025-12-01T00:00:11+00:00",
     "range_convention": "[start_block, end_block_exclusive)"
   }
 }

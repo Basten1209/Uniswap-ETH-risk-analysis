@@ -1,0 +1,59 @@
+{
+  "run_id": "11b815ef_b12376751_b19336607",
+  "verified_at_utc": "2026-08-18T08:16:18Z",
+  "project": "uniswapdata3",
+  "configured_block_range": {
+    "start_inclusive": 12376751,
+    "end_exclusive": 19336607
+  },
+  "configured_date_range": {
+    "start_inclusive": "2021-05-05",
+    "end_exclusive": "2024-03-01"
+  },
+  "observed_event_range": {
+    "first_block": 12376751,
+    "last_block": 19336606
+  },
+  "file_counts": {
+    "events": 34,
+    "block_daily": 34,
+    "total_parquet": 68,
+    "query_runs": 68,
+    "partial": 0
+  },
+  "row_counts": {
+    "events": 6852537,
+    "block_daily": 1031
+  },
+  "block_daily_dates": {
+    "first": "2021-05-05",
+    "last": "2024-02-29",
+    "unique_count": 1031,
+    "expected_count": 1031
+  },
+  "query_usage": {
+    "total_bytes_processed": 1074815483490,
+    "total_gib_processed": 1000.9999233204871,
+    "total_bytes_billed": 1074918326272,
+    "total_gib_billed": 1001.095703125,
+    "monthly_quota_headroom_bytes": 24593301504,
+    "monthly_quota_headroom_gib": 22.904296875
+  },
+  "raw_output": {
+    "bytes": 494838792,
+    "mib": 471.91504669189453
+  },
+  "checks": {
+    "all_query_runs_complete": true,
+    "all_sha256_match": true,
+    "all_row_counts_match": true,
+    "all_observed_blocks_within_configured_range": true,
+    "block_daily_has_1031_unique_contiguous_dates": true,
+    "pool_creation_boundary_matches_12376751": true,
+    "next_shard_boundary_matches_19336607": true,
+    "information_schema_usage_matches_query_runs": true,
+    "expected_file_counts": true,
+    "no_partial_files": true
+  },
+  "remaining_historical_range": null
+}

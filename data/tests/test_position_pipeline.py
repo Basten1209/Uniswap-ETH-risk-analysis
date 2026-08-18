@@ -20,6 +20,7 @@ from uniswap_v3_data.events import (
     NFPM_TRANSFER,
     POOL_BURN,
     POOL_MINT,
+    SIGNATURE_TO_TOPIC,
     ZERO_ADDRESS,
     parse_raw_events,
 )
@@ -50,6 +51,36 @@ def event(
         "address": address,
         "event_signature": signature,
         "args_json": json.dumps(args),
+    }
+
+
+def abi_word(value: int | str) -> str:
+    if isinstance(value, str):
+        return value.removeprefix("0x").zfill(64)
+    return f"{value % (2**256):064x}"
+
+
+def raw_event(
+    block: int,
+    transaction_hash: str,
+    log_index: int,
+    address: str,
+    signature: str,
+    indexed: list[int | str],
+    unindexed: list[int | str],
+) -> dict[str, object]:
+    return {
+        "block_number": block,
+        "block_timestamp": "2021-06-01T00:00:00Z",
+        "transaction_hash": transaction_hash,
+        "transaction_index": 0,
+        "log_index": log_index,
+        "address": address,
+        "topics_json": json.dumps(
+            [SIGNATURE_TO_TOPIC[signature], *["0x" + abi_word(v) for v in indexed]]
+        ),
+        "data": "0x" + "".join(abi_word(v) for v in unindexed),
+        "removed": False,
     }
 
 
@@ -150,6 +181,50 @@ class PositionPipelineTest(unittest.TestCase):
         self.assertEqual(row["tick_upper"], 100)
         self.assertEqual(row["fee_amount0_raw"], str(3 * 10**16))
         self.assertEqual(row["fee_amount1_raw"], str(30 * 10**6))
+
+    def test_raw_receipt_log_abi_decoding_and_link(self) -> None:
+        mint_tx = "0x" + "dd" * 32
+        raw = pd.DataFrame(
+            [
+                raw_event(
+                    100,
+                    mint_tx,
+                    10,
+                    POOL,
+                    POOL_MINT,
+                    [NFPM, -100, 100],
+                    [SENDER, 1000, 10**18, 2_000 * 10**6],
+                ),
+                raw_event(
+                    100,
+                    mint_tx,
+                    11,
+                    NFPM,
+                    NFPM_TRANSFER,
+                    [ZERO_ADDRESS, ALICE, 123],
+                    [],
+                ),
+                raw_event(
+                    100,
+                    mint_tx,
+                    12,
+                    NFPM,
+                    NFPM_INCREASE,
+                    [123],
+                    [1000, 10**18, 2_000 * 10**6],
+                ),
+            ]
+        )
+        pool, nfpm = parse_raw_events(raw, POOL, NFPM)
+        self.assertEqual(pool.iloc[0]["tick_lower"], -100)
+        self.assertEqual(pool.iloc[0]["owner"], NFPM)
+        self.assertEqual(nfpm.loc[nfpm["event_type"] == "Transfer"].iloc[0]["token_id"], "123")
+        self.assertEqual(
+            nfpm.loc[nfpm["event_type"] == "IncreaseLiquidity"].iloc[0][
+                "amount0_raw"
+            ],
+            str(10**18),
+        )
 
     def test_closed_return_conventions(self) -> None:
         pool, nfpm = parse_raw_events(self.raw, POOL, NFPM)
