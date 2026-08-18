@@ -1,0 +1,43 @@
+{
+  "mode": "dry-run",
+  "created_at_utc": "2026-08-18T06:48:49.613897+00:00",
+  "config_path": "/Users/seungjun/conductor/workspaces/uniswap-eth-risk-analysis/osaka/data/config/selected_pool_recent.json",
+  "config": {
+    "project": "uniswapdata",
+    "location": "US",
+    "network": "ethereum-mainnet",
+    "pool_address": "0x11b815efb8f581194ae79006d24e0d814b7697f6",
+    "nfpm_address": "0xc36442b4a4522e871399cd717abdd847ab11fe88",
+    "fee_tier": 500,
+    "token0": {
+      "symbol": "WETH",
+      "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "USDT",
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "decimals": 6
+    },
+    "start_date": "2025-12-01",
+    "end_date": "2026-08-19",
+    "start_block": 23914921,
+    "end_block_exclusive": 25779958,
+    "events_table": "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events",
+    "logs_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
+    "blocks_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
+  },
+  "block_columns": [
+    "block_number",
+    "block_timestamp",
+    "base_fee_per_gas",
+    "gas_limit",
+    "gas_used"
+  ],
+  "planned_job_count": 0,
+  "max_jobs": null,
+  "estimated_bytes_processed": 0,
+  "estimated_gib_processed": 0.0,
+  "budget_bytes": 1,
+  "jobs": []
+}

@@ -37,6 +37,7 @@ class ResearchConfig:
     start_block: int
     end_block_exclusive: int
     events_table: str
+    logs_table: str
     blocks_table: str
 
 
@@ -52,6 +53,7 @@ class FixedPoolConfig:
     token0: TokenConfig
     token1: TokenConfig
     events_table: str
+    logs_table: str
     blocks_table: str
 
 
@@ -103,8 +105,13 @@ def load_config(
     if not location:
         raise ValueError("location is empty")
     events_table = str(bigquery["events_table"]).strip(" `")
+    logs_table = str(bigquery["logs_table"]).strip(" `")
     blocks_table = str(bigquery["blocks_table"]).strip(" `")
-    if events_table.count(".") != 2 or blocks_table.count(".") != 2:
+    if (
+        events_table.count(".") != 2
+        or logs_table.count(".") != 2
+        or blocks_table.count(".") != 2
+    ):
         raise ValueError("BigQuery table names must use project.dataset.table")
     pool_address = _address(payload["pool_address"], "pool_address")
     nfpm_address = _address(payload["nfpm_address"], "nfpm_address")
@@ -131,6 +138,7 @@ def load_config(
         start_block=start_block,
         end_block_exclusive=end_block_exclusive,
         events_table=events_table,
+        logs_table=logs_table,
         blocks_table=blocks_table,
     )
 
@@ -150,8 +158,13 @@ def load_fixed_pool_config(
     if not location:
         raise ValueError("location is empty")
     events_table = str(bigquery["events_table"]).strip(" `")
+    logs_table = str(bigquery["logs_table"]).strip(" `")
     blocks_table = str(bigquery["blocks_table"]).strip(" `")
-    if events_table.count(".") != 2 or blocks_table.count(".") != 2:
+    if (
+        events_table.count(".") != 2
+        or logs_table.count(".") != 2
+        or blocks_table.count(".") != 2
+    ):
         raise ValueError("BigQuery table names must use project.dataset.table")
     factory_address = _address(payload["factory_address"], "factory_address")
     pool_address = _address(payload["pool_address"], "pool_address")
@@ -180,6 +193,7 @@ def load_fixed_pool_config(
         token0=token0,
         token1=token1,
         events_table=events_table,
+        logs_table=logs_table,
         blocks_table=blocks_table,
     )
 

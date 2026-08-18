@@ -13,7 +13,6 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
 from google.cloud import bigquery
 
 DATA_DIR = Path(__file__).resolve().parents[1]
@@ -21,12 +20,9 @@ sys.path.insert(0, str(DATA_DIR / "src"))
 
 from uniswap_v3_data.config import ResearchConfig, collection_run_id, load_config
 from uniswap_v3_data.events import (
-    NFPM_COLLECT,
-    NFPM_DECREASE,
-    NFPM_INCREASE,
-    NFPM_TRANSFER,
-    POOL_MINT,
+    NFPM_SIGNATURES,
     POOL_SIGNATURES,
+    SIGNATURE_TO_TOPIC,
 )
 
 BLOCK_OPTIONAL_COLUMNS = (
@@ -40,79 +36,9 @@ def _sql_strings(values: tuple[str, ...]) -> str:
     return ",\n      ".join("'" + value.replace("'", "''") + "'" for value in values)
 
 
-def build_position_seed_query(config: ResearchConfig, start: date, end: date) -> str:
-    """Find NFPM token IDs created or increased through the selected pool."""
-    return f"""WITH pool_mints AS (
-  SELECT
-    block_number,
-    block_timestamp,
-    transaction_hash,
-    transaction_index,
-    log_index,
-    CAST(STRING(args[2]) AS INT64) AS tick_lower,
-    CAST(STRING(args[3]) AS INT64) AS tick_upper,
-    STRING(args[4]) AS liquidity_raw,
-    STRING(args[5]) AS amount0_raw,
-    STRING(args[6]) AS amount1_raw
-  FROM `{config.events_table}`
-  WHERE block_timestamp >= TIMESTAMP('{start.isoformat()}')
-    AND block_timestamp < TIMESTAMP('{end.isoformat()}')
-    AND block_number >= {config.start_block}
-    AND block_number < {config.end_block_exclusive}
-    AND address = '{config.pool_address}'
-    AND event_signature = '{POOL_MINT}'
-    AND LOWER(STRING(args[1])) = '{config.nfpm_address}'
-), nfpm_increases AS (
-  SELECT
-    block_number,
-    block_timestamp,
-    transaction_hash,
-    transaction_index,
-    log_index,
-    STRING(args[0]) AS token_id,
-    STRING(args[1]) AS liquidity_raw,
-    STRING(args[2]) AS amount0_raw,
-    STRING(args[3]) AS amount1_raw
-  FROM `{config.events_table}`
-  WHERE block_timestamp >= TIMESTAMP('{start.isoformat()}')
-    AND block_timestamp < TIMESTAMP('{end.isoformat()}')
-    AND block_number >= {config.start_block}
-    AND block_number < {config.end_block_exclusive}
-    AND address = '{config.nfpm_address}'
-    AND event_signature = '{NFPM_INCREASE}'
-)
-SELECT
-  n.token_id,
-  n.block_number,
-  n.block_timestamp,
-  n.transaction_hash,
-  n.transaction_index,
-  p.log_index AS pool_mint_log_index,
-  n.log_index AS nfpm_increase_log_index,
-  p.tick_lower,
-  p.tick_upper,
-  n.liquidity_raw,
-  n.amount0_raw,
-  n.amount1_raw
-FROM nfpm_increases AS n
-JOIN pool_mints AS p
-  ON n.transaction_hash = p.transaction_hash
-  AND p.log_index < n.log_index
-  AND p.liquidity_raw = n.liquidity_raw
-  AND p.amount0_raw = n.amount0_raw
-  AND p.amount1_raw = n.amount1_raw
-QUALIFY ROW_NUMBER() OVER (
-  PARTITION BY n.transaction_hash, n.log_index
-  ORDER BY p.log_index DESC
-) = 1
-ORDER BY block_number, transaction_index, nfpm_increase_log_index"""
-
-
 def build_events_query(config: ResearchConfig, start: date, end: date) -> str:
-    pool_signatures = _sql_strings(POOL_SIGNATURES)
-    nfpm_position_signatures = _sql_strings(
-        (NFPM_INCREASE, NFPM_DECREASE, NFPM_COLLECT)
-    )
+    pool_topics = _sql_strings(tuple(SIGNATURE_TO_TOPIC[s] for s in POOL_SIGNATURES))
+    nfpm_topics = _sql_strings(tuple(SIGNATURE_TO_TOPIC[s] for s in NFPM_SIGNATURES))
     return f"""SELECT
   block_number,
   block_timestamp,
@@ -120,35 +46,27 @@ def build_events_query(config: ResearchConfig, start: date, end: date) -> str:
   transaction_index,
   log_index,
   address,
-  event_signature,
-  TO_JSON_STRING(args) AS args_json
-FROM `{config.events_table}`
+  TO_JSON_STRING(topics) AS topics_json,
+  data,
+  removed
+FROM `{config.logs_table}`
 WHERE block_timestamp >= TIMESTAMP('{start.isoformat()}')
   AND block_timestamp < TIMESTAMP('{end.isoformat()}')
   AND block_number >= {config.start_block}
   AND block_number < {config.end_block_exclusive}
+  AND removed IS NOT TRUE
   AND (
     (
       address = '{config.pool_address}'
-      AND event_signature IN (
-      {pool_signatures}
+      AND topics[SAFE_OFFSET(0)] IN (
+      {pool_topics}
       )
     )
     OR
     (
       address = '{config.nfpm_address}'
-      AND (
-        (
-          event_signature IN (
-          {nfpm_position_signatures}
-          )
-          AND STRING(args[0]) IN UNNEST(@target_token_ids)
-        )
-        OR
-        (
-          event_signature = '{NFPM_TRANSFER}'
-          AND STRING(args[2]) IN UNNEST(@target_token_ids)
-        )
+      AND topics[SAFE_OFFSET(0)] IN (
+      {nfpm_topics}
       )
     )
   )
@@ -255,30 +173,19 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def query_parameters(kind: str, target_token_ids: list[str]) -> list[Any]:
-    if kind != "events":
-        return []
-    return [
-        bigquery.ArrayQueryParameter(
-            "target_token_ids", "STRING", target_token_ids or ["0"]
-        )
-    ]
-
-
 def execute_plan(
     client: bigquery.Client,
     config: ResearchConfig,
     metadata_root: Path,
     plan: dict[str, Any],
-    target_token_ids: list[str],
 ) -> None:
     maximum = max(
         int(plan["estimated_bytes"]),
         math.ceil(int(plan["estimated_bytes"]) * 1.10),
+        10 * 2**20,
     )
     job_config = bigquery.QueryJobConfig(
         use_query_cache=True,
-        query_parameters=query_parameters(plan["kind"], target_token_ids),
     )
     if maximum > 0:
         job_config.maximum_bytes_billed = maximum
@@ -304,13 +211,10 @@ def execute_plan(
         "source_table": (
             config.blocks_table
             if plan["kind"] == "block_daily"
-            else config.events_table
+            else config.logs_table
         ),
         "job_id": job.job_id,
         "row_count": len(frame),
-        "target_token_id_count": (
-            len(target_token_ids) if plan["kind"] == "events" else None
-        ),
         "estimated_bytes": plan["estimated_bytes"],
         "total_bytes_processed": int(job.total_bytes_processed or 0),
         "total_bytes_billed": int(job.total_bytes_billed or 0),
@@ -355,7 +259,14 @@ def main() -> None:
         type=int,
         help="required for --execute; total maximum dry-run bytes across missing jobs",
     )
+    parser.add_argument(
+        "--max-jobs",
+        type=int,
+        help="run only the first N missing jobs; rerun without it to resume",
+    )
     args = parser.parse_args()
+    if args.max_jobs is not None and args.max_jobs <= 0:
+        raise ValueError("--max-jobs must be positive")
 
     config = load_config(args.config, args.project)
     client = bigquery.Client(project=config.project, location=config.location)
@@ -368,7 +279,6 @@ def main() -> None:
     for start, end in monthly_ranges(config.start_date, config.end_date):
         interval = f"{start.isoformat()}_{end.isoformat()}"
         queries = {
-            "position_seeds": build_position_seed_query(config, start, end),
             "events": build_events_query(config, start, end),
             "block_daily": build_blocks_query(config, start, end, columns),
         }
@@ -385,7 +295,6 @@ def main() -> None:
                 job_config=bigquery.QueryJobConfig(
                     dry_run=True,
                     use_query_cache=False,
-                    query_parameters=query_parameters(kind, ["0"]),
                 ),
                 location=config.location,
             )
@@ -406,6 +315,9 @@ def main() -> None:
                 flush=True,
             )
 
+    if args.max_jobs is not None:
+        plans = plans[: args.max_jobs]
+
     total = sum(plan["estimated_bytes"] for plan in plans)
     plan_payload = {
         "mode": "execute" if args.execute else "dry-run",
@@ -414,6 +326,7 @@ def main() -> None:
         "config": asdict(config),
         "block_columns": columns,
         "planned_job_count": len(plans),
+        "max_jobs": args.max_jobs,
         "estimated_bytes_processed": total,
         "estimated_gib_processed": total / 2**30,
         "budget_bytes": args.budget_bytes,
@@ -445,41 +358,8 @@ def main() -> None:
     if args.budget_bytes is None or args.budget_bytes <= 0:
         raise ValueError("--execute requires a positive --budget-bytes")
 
-    seed_plans = [plan for plan in plans if plan["kind"] == "position_seeds"]
-    for plan in seed_plans:
-        execute_plan(client, config, metadata_root, plan, [])
-
-    seed_paths = sorted((raw_root / "position_seeds").glob("*.parquet"))
-    if not seed_paths:
-        raise RuntimeError("position seed collection produced no parquet files")
-    seed_frames = [pd.read_parquet(path, columns=["token_id"]) for path in seed_paths]
-    target_token_ids = sorted(
-        {
-            str(value)
-            for frame in seed_frames
-            for value in frame["token_id"].dropna().tolist()
-        },
-        key=int,
-    )
-    if not target_token_ids:
-        raise RuntimeError(
-            "no NFPM token IDs matched the fixed pool; verify decoded-event coverage"
-        )
-    parameter_size = sum(len(value) + 3 for value in target_token_ids)
-    if parameter_size > 8_000_000:
-        raise RuntimeError(
-            "target token-ID parameter is too large for direct collection; "
-            "materialize position_seeds in BigQuery and join server-side"
-        )
-    print(
-        f"identified {len(target_token_ids):,} fixed-pool NFPM token IDs",
-        flush=True,
-    )
-
     for plan in plans:
-        if plan["kind"] == "position_seeds":
-            continue
-        execute_plan(client, config, metadata_root, plan, target_token_ids)
+        execute_plan(client, config, metadata_root, plan)
 
 
 if __name__ == "__main__":

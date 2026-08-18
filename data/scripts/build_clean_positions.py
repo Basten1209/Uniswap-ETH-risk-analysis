@@ -112,7 +112,7 @@ def main() -> None:
     if not all_links:
         raise RuntimeError(
             "no target-pool Mint could be linked to NFPM IncreaseLiquidity; "
-            "verify pool/NFPM addresses and decoded-event coverage"
+            "verify pool/NFPM addresses and raw-log coverage"
         )
 
     links = (

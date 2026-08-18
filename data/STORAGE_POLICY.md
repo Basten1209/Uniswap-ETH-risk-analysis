@@ -1,8 +1,8 @@
 # Large-data storage policy
 
 Uniswap event history is too large for normal Git storage. This project keeps
-the reproducible recipe and provenance in Git while storing data artifacts in a
-separate data root.
+the reproducible recipe and provenance in Git while storing data artifacts in
+Git-ignored workspace paths.
 
 ## What belongs in Git
 
@@ -28,17 +28,16 @@ version even when stored through LFS.
 
 ## Recommended layout
 
-Use an external SSD or a Cloud Storage-backed working directory as the data
-root, while leaving metadata in this repository.
+The current machine has no external disk, so use the repository's ignored
+`data/` subdirectories as the data root while leaving metadata trackable.
 
 ```text
-/Volumes/uniswap-risk-data/
+repository/data/
 ├── raw/bigquery/POOL_BLOCK_SNAPSHOT/
 ├── processed/
 ├── derived/
-└── external/
-
-repository/data/metadata/
+├── external/
+└── metadata/
 ├── pool_snapshot/
 ├── bigquery/
 └── processing/
@@ -47,7 +46,7 @@ repository/data/metadata/
 Pass the roots explicitly:
 
 ```bash
---data-root /Volumes/uniswap-risk-data \
+--data-root data \
 --metadata-root data/metadata
 ```
 
@@ -58,9 +57,9 @@ copy of raw data.
 
 | Layer | Canonical location | Mutation rule | Backup rule |
 | --- | --- | --- | --- |
-| Raw | GCS bucket or external SSD | Immutable; never overwrite | Keep at least one second copy |
-| Processed | External SSD/GCS | Rebuild when code or config changes | Optional if reproducible |
-| Derived | External SSD/GCS | Version by config/code hash | Preserve outputs used in paper |
+| Raw | Git-ignored workspace path or GCS | Immutable; never overwrite | Keep at least one second copy before paper freeze |
+| Processed | Git-ignored workspace path/GCS | Rebuild when code or config changes | Optional if reproducible |
+| Derived | Git-ignored workspace path/GCS | Version by config/code hash | Preserve outputs used in paper |
 | Metadata | Git | Review changes | Normal Git remote |
 
 The raw run ID includes the exact half-open block snapshot, and monthly
@@ -98,7 +97,7 @@ local processing:
 ```bash
 gcloud storage rsync \
   gs://YOUR_BUCKET/uniswap/raw/POOL_BLOCK_SNAPSHOT/ \
-  /Volumes/uniswap-risk-data/raw/bigquery/POOL_BLOCK_SNAPSHOT/
+  data/raw/bigquery/POOL_BLOCK_SNAPSHOT/
 ```
 
 This avoids routing a large query result through one Python process and is the

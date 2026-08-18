@@ -1,0 +1,15 @@
+{
+  "status": "abandoned",
+  "abandoned_at_utc": "2026-08-18T06:29:00+00:00",
+  "reason": "The public decoded_events table omitted canonical NFPM IncreaseLiquidity logs that are present in Ethereum transaction receipts, so it cannot support lossless position lifecycle reconstruction.",
+  "evidence_transaction_hash": "0xecf4be6b60ce87ce66af02464414c933964f91e119df72f05adc7fd7a46591f4",
+  "missing_event_topic": "0x3067048beee31b25b2f1681f88dac838c8bba36af25bfb2b7cf7473a5847e35f",
+  "replacement_source": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
+  "cumulative_project_billed_bytes_at_abandonment": 202451714048,
+  "obsolete_run_ids": [
+    "11b815ef_b12376751_b25779958",
+    "11b815ef_b22820674_b25779958"
+  ],
+  "local_recovery_path": ".context/quarantine/2026-08-18-decoded-events-attempt",
+  "use_for_research": false
+}

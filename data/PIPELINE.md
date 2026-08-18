@@ -14,7 +14,7 @@
 Uniswap V3는 2021-05-05에 Ethereum Mainnet에 출시되었으므로 2021년 자료가
 존재한다. 그러나 수집 시작일을 출시일이나 임의의 4년 전으로 정하지 않는다. Factory의
 해당 pool `PoolCreated` block부터, 실행 시 BigQuery에서 확인되는 최신 finalized
-decoded-event snapshot까지 수집한다.
+snapshot까지 범위를 고정한다.
 
 **수집 범위와 연구 표본 범위는 다르다.** 먼저 가능한 전체 history를 보존하고,
 clean-position 수·보유기간·결측·시장 국면을 EDA한 뒤 분석 기간과 cohort를 별도
@@ -54,8 +54,6 @@ cp data/config/fixed_pool.example.json data/config/fixed_pool.local.json
 token은 config와 Git에 넣지 않는다.
 `gcloud`가 설치되어 있지 않다면 Google Cloud CLI를 먼저 설치하거나, 접근 권한이 있는
 service account 파일의 **경로만** `GOOGLE_APPLICATION_CREDENTIALS`로 설정한다.
-
-대용량 자료는 외장 SSD 또는 별도 볼륨에 둔다.
 
 외장 디스크 없이 workspace 내부의 Git 제외 경로를 기본 저장소로 사용한다.
 
@@ -103,20 +101,22 @@ python data/scripts/prepare_fixed_pool.py \
 
 ### 무료 한도에 맞춘 현재 shard 분할
 
-전체 범위의 dry-run은 약 2,494 GiB이므로 한 Sandbox 월 한도에 들어오지 않는다.
+전체 범위의 decoded-event 2-pass dry-run은 약 2,494 GiB였고, 누락 없는 raw-log
+1-pass 방식도 최근 2025-07 이후만 약 999 GiB이므로 현재 남은 Sandbox 월 한도에
+들어오지 않는다.
 현재 workspace에서는 다음 최신 shard를 수집한다.
 
-- local recent: `[22,820,674, 25,779,958)`, 2025-07-01부터 snapshot 끝까지
-- teammate historical: `[12,376,751, 22,820,674)`, pool 생성부터 2025-07-01까지
+- local recent: `[23,914,921, 25,779,958)`, 2025-12-01부터 snapshot 끝까지
+- teammate historical: `[12,376,751, 23,914,921)`, pool 생성부터 2025-12-01까지
 
 두 범위는 반열린 구간이므로 블록 중복과 누락이 없다. 팀원에게는
 `data/config/selected_pool_historical_handoff.json`과 이 문서를 전달하고, 실행할 때
 본인의 quota project를 `--project`로 지정하도록 한다. shard별 clean-closed 연구표본은
 해당 shard 안에서 최초 mint와 최종 close가 모두 관찰된 token ID로 제한한다. 경계를
-가로지르는 포지션까지 분석하려면 두 shard의 position seed를 합친 뒤 NFPM 이벤트를
-다시 회수해야 한다.
+가로지르는 포지션까지 분석하려면 두 shard의 raw logs를 합쳐 lifecycle을 다시
+재구성한다.
 
-### 방법 A — 월별 Parquet을 로컬 또는 외장 SSD에 저장
+### 방법 A — 월별 Parquet을 Git 제외 workspace 경로에 저장
 
 현재 코드가 처음부터 끝까지 자동화하는 기본 방법이다. BigQuery Sandbox에서는
 Cloud-side 저장공간을 쓰지 않는 이 방식을 권장한다. 먼저 모든 월별 쿼리를 dry run한다.
@@ -139,22 +139,19 @@ python data/scripts/collect_bigquery.py \
   --budget-bytes YOUR_TOTAL_BYTE_LIMIT
 ```
 
-수집기는 다음의 2단계를 사용한다.
-
-1. 고정 pool의 core `Mint`와 같은 transaction의 NFPM `IncreaseLiquidity`를 정확한
-   liquidity·amount·log 순서로 연결하여 이 pool의 tokenId만 찾는다.
-2. pool events와 그 tokenId들의 NFPM Increase/Decrease/Collect/Transfer만 월별로
-   받는다.
-
-따라서 canonical NFPM의 모든 pool 자료를 내려받지 않는다. 월별 파일은 immutable이며
-중단 후 다시 실행하면 이미 완료된 파일을 건너뛴다.
+수집기는 BigQuery raw `logs`를 월별로 한 번만 읽어 고정 pool의 핵심 event와 canonical
+NFPM의 Increase/Decrease/Collect/Transfer를 함께 받는다. `decoded_events`에는 실제
+receipt에 존재하는 NFPM `IncreaseLiquidity`가 누락되는 사례가 확인되어 lifecycle
+원천으로 사용하지 않는다. raw topic/data는 로컬에서 ABI 디코딩하고, 고정 pool의 core
+`Mint`와 같은 transaction의 NFPM `IncreaseLiquidity`를 liquidity·amount·log 순서로
+연결해 target token ID만 processed layer에 남긴다. 월별 파일은 immutable이며 중단 후
+다시 실행하면 이미 완료된 파일을 건너뛴다.
 
 ### 방법 B — BigQuery `EXPORT DATA`로 GCS에 직접 저장
 
 로컬 연결이나 용량이 불안하면 `data/metadata/bigquery/.../sql/`의 월별 SQL을
 destination table 또는 `EXPORT DATA`의 `SELECT`로 사용해 GCS Parquet shard를 만든다.
-tokenId parameter 때문에 position seed를 먼저 materialize한 뒤 server-side join해야
-한다. 이 방식은 대량 수집에 가장 견고하지만 GCS bucket과 사용자 dataset 권한이
+이 방식은 대량 수집에 가장 견고하지만 GCS bucket과 사용자 dataset 권한이
 추가로 필요하다. Billing 없는 Sandbox에서는 저장공간·기능 제약 때문에 방법 A를 먼저
 사용한다. 예시는 [`STORAGE_POLICY.md`](STORAGE_POLICY.md)에 있다.
 
@@ -171,8 +168,7 @@ GCS Parquet을 만들 수 있다. 쿼리 재시도와 공유는 쉽지만 중간
 
 ```text
 $DATA_ROOT/raw/bigquery/RUN_ID/
-├── position_seeds/  # 고정 pool Mint와 연결된 tokenId 근거
-├── events/          # 고정 pool + 해당 tokenId의 NFPM lifecycle
+├── events/          # 고정 pool + canonical NFPM raw lifecycle logs
 └── block_daily/     # 일별 block/base-fee/gas 집계
 
 data/metadata/bigquery/RUN_ID/
@@ -181,12 +177,28 @@ data/metadata/bigquery/RUN_ID/
 └── query_runs/      # job ID, row 수, byte 수, SHA-256
 ```
 
+2026-08-18에 완료한 recent shard `11b815ef_b23914921_b25779958`의 검증 결과:
+
+| 항목 | 결과 |
+| --- | ---: |
+| 월별 event/block 파일 | 9 + 9 |
+| raw event rows | 2,263,434 |
+| pool / canonical NFPM rows | 994,039 / 1,269,395 |
+| 일별 pool/block rows | 261 / 261 |
+| target / clean-closed positions | 2,721 / 416 |
+| raw collection billed | 692.320 GiB |
+| local raw / processed / derived | 140 MiB / 188 MiB / 608 KiB |
+
+개별 파일의 정확한 row 수, billed bytes, SHA-256은
+`data/metadata/bigquery/11b815ef_b23914921_b25779958/query_runs/`에 있고, 처리 QC는
+`data/metadata/processing/build_clean_positions_qc.json`에 있다.
+
 `events`에는 다음 자료가 있다.
 
 | Contract | Events | 용도 |
 | --- | --- | --- |
 | 고정 pool | Initialize, Mint, Burn, Swap, Collect | 가격/tick/liquidity 경로, 거래량, pool-position 연결 |
-| NFPM의 target tokenId만 | Transfer, IncreaseLiquidity, DecreaseLiquidity, Collect | 소유권, 예치, 인출, 수령액, 생애 fee |
+| canonical NFPM | Transfer, IncreaseLiquidity, DecreaseLiquidity, Collect | 로컬에서 target tokenId를 식별한 뒤 소유권, 예치, 인출, 수령액, 생애 fee 계산 |
 
 전체 Ethereum block 원본을 받지 않고 BigQuery에서 일별 gas regime으로 집계해 파일
 용량을 줄인다. 정확한 event ordering에는 pool/NFPM events의 block,
@@ -196,7 +208,7 @@ transaction index, log index가 보존된다.
 
 ```bash
 python data/scripts/build_clean_positions.py \
-  --config data/config/selected_pool.json \
+  --config data/config/selected_pool_recent.json \
   --data-root "$DATA_ROOT" \
   --metadata-root data/metadata
 ```
@@ -258,7 +270,7 @@ timestamp,token0_price_usdt,token1_price_usdt
 
 ```bash
 python data/scripts/calculate_closed_returns.py \
-  --config data/config/selected_pool.json \
+  --config data/config/selected_pool_recent.json \
   --data-root "$DATA_ROOT" \
   --metadata-root data/metadata \
   --prices "$DATA_ROOT/external/oracle/weth_usdt.csv" \
@@ -271,7 +283,7 @@ python data/scripts/calculate_closed_returns.py \
 position 내부 일별 fee-inclusive return에는 fee-growth state replay가 추가로 필요하지만,
 종료 position cohort의 IL/LVR/PL/return 대표값 시계열은 이 자료로 구성할 수 있다.
 
-## 8. 내가 직접 실행하려면 필요한 것
+## 8. 다른 환경이나 historical shard에서 실행하려면 필요한 것
 
 다음 네 가지가 준비되면 이 workspace에서 dry run부터 실제 다운로드까지 실행할 수 있다.
 
@@ -279,7 +291,7 @@ position 내부 일별 fee-inclusive return에는 fee-growth state replay가 추
 2. **Application Default Credentials** — 이 Mac/Conductor 환경에서
    `gcloud auth application-default login`을 완료하거나 service account 경로를 환경변수로
    설정한다. credential 내용을 채팅이나 Git에 붙이지 않는다.
-3. **저장 위치** — 쓰기 가능한 외장 SSD 절대경로 또는 GCS bucket URI와 충분한 용량.
+3. **저장 위치** — 기본 `data/` Git 제외 경로 또는 GCS bucket URI와 충분한 용량.
 4. **비용 승인 한도** — 먼저 dry run 결과를 보고 pool snapshot query와 전체 수집 query의
    maximum bytes를 각각 승인한다.
 

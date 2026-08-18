@@ -15,9 +15,11 @@ can support analysis.
 The dataset covers the fixed Uniswap V3 WETH/USDT 0.05% pool
 `0x11b815efb8f581194ae79006d24e0d814b7697f6` on Ethereum Mainnet. WETH is the
 on-chain representation of ETH. The unit of analysis is the actual on-chain LP
-position, and the analytical outcome is realized LP return. The collection
-preserves the full available pool history; the research sample window is chosen
-only after exploratory data analysis.
+position, and the analytical outcome is realized LP return. The snapshot fixes
+the full available pool history. Collection is split into non-overlapping block
+shards to respect query quotas; this workspace contains the completed recent
+shard and a handoff config defines the historical shard. The research sample
+window is chosen only after exploratory data analysis.
 
 The following scope is fixed:
 
@@ -90,8 +92,8 @@ data/
   PL, and regime features without overwriting source layers.
 - **Metadata:** make every layer traceable without relying on filenames alone.
 
-Large datasets live outside Git under a configurable data root (an external
-disk for local extraction or Google Cloud Storage for server-side export). Only
+Large datasets live in Git-ignored workspace paths under the configurable data
+root (or Google Cloud Storage for server-side export). Only
 code, configuration, manifests, schemas, checksums, and QA summaries belong in
 the repository. See [`STORAGE_POLICY.md`](STORAGE_POLICY.md) for the complete
 storage, retention, and recovery rules.
