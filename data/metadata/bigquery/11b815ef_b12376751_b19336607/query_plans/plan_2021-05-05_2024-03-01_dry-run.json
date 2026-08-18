@@ -1,0 +1,588 @@
+{
+  "mode": "dry-run",
+  "created_at_utc": "2026-08-18T07:46:22.829230+00:00",
+  "config_path": "/Users/seungjun/conductor/workspaces/uniswap-eth-risk-analysis/osaka/data/config/selected_pool_historical_uniswapdata3.local.json",
+  "config": {
+    "project": "uniswapdata3",
+    "location": "US",
+    "network": "ethereum-mainnet",
+    "pool_address": "0x11b815efb8f581194ae79006d24e0d814b7697f6",
+    "nfpm_address": "0xc36442b4a4522e871399cd717abdd847ab11fe88",
+    "fee_tier": 500,
+    "token0": {
+      "symbol": "WETH",
+      "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "USDT",
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "decimals": 6
+    },
+    "start_date": "2021-05-05",
+    "end_date": "2024-03-01",
+    "start_block": 12376751,
+    "end_block_exclusive": 19336607,
+    "events_table": "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events",
+    "logs_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs",
+    "blocks_table": "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
+  },
+  "block_columns": [
+    "block_number",
+    "block_timestamp",
+    "base_fee_per_gas",
+    "gas_limit",
+    "gas_used"
+  ],
+  "planned_job_count": 68,
+  "max_jobs": null,
+  "estimated_bytes_processed": 1077483118152,
+  "estimated_gib_processed": 1003.4843517020345,
+  "budget_bytes": 1080000000000,
+  "jobs": [
+    {
+      "kind": "events",
+      "start": "2021-05-05",
+      "end": "2021-06-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-05-05_2021-06-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-05-05_2021-06-01.parquet",
+      "estimated_bytes": 26262588761
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-05-05",
+      "end": "2021-06-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-05-05_2021-06-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-05-05_2021-06-01.parquet",
+      "estimated_bytes": 6410048
+    },
+    {
+      "kind": "events",
+      "start": "2021-06-01",
+      "end": "2021-07-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-06-01_2021-07-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-06-01_2021-07-01.parquet",
+      "estimated_bytes": 28672432737
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-06-01",
+      "end": "2021-07-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-06-01_2021-07-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-06-01_2021-07-01.parquet",
+      "estimated_bytes": 6186560
+    },
+    {
+      "kind": "events",
+      "start": "2021-07-01",
+      "end": "2021-08-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-07-01_2021-08-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-07-01_2021-08-01.parquet",
+      "estimated_bytes": 28637587293
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-07-01",
+      "end": "2021-08-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-07-01_2021-08-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-07-01_2021-08-01.parquet",
+      "estimated_bytes": 6331872
+    },
+    {
+      "kind": "events",
+      "start": "2021-08-01",
+      "end": "2021-09-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-08-01_2021-09-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-08-01_2021-09-01.parquet",
+      "estimated_bytes": 26002808081
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-08-01",
+      "end": "2021-09-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-08-01_2021-09-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-08-01_2021-09-01.parquet",
+      "estimated_bytes": 7775480
+    },
+    {
+      "kind": "events",
+      "start": "2021-09-01",
+      "end": "2021-10-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-09-01_2021-10-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-09-01_2021-10-01.parquet",
+      "estimated_bytes": 24151448899
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-09-01",
+      "end": "2021-10-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-09-01_2021-10-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-09-01_2021-10-01.parquet",
+      "estimated_bytes": 7747800
+    },
+    {
+      "kind": "events",
+      "start": "2021-10-01",
+      "end": "2021-11-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-10-01_2021-11-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-10-01_2021-11-01.parquet",
+      "estimated_bytes": 26430346313
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-10-01",
+      "end": "2021-11-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-10-01_2021-11-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-10-01_2021-11-01.parquet",
+      "estimated_bytes": 7912040
+    },
+    {
+      "kind": "events",
+      "start": "2021-11-01",
+      "end": "2021-12-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-11-01_2021-12-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-11-01_2021-12-01.parquet",
+      "estimated_bytes": 27014237274
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-11-01",
+      "end": "2021-12-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-11-01_2021-12-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-11-01_2021-12-01.parquet",
+      "estimated_bytes": 7600800
+    },
+    {
+      "kind": "events",
+      "start": "2021-12-01",
+      "end": "2022-01-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2021-12-01_2022-01-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2021-12-01_2022-01-01.parquet",
+      "estimated_bytes": 26728033985
+    },
+    {
+      "kind": "block_daily",
+      "start": "2021-12-01",
+      "end": "2022-01-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2021-12-01_2022-01-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2021-12-01_2022-01-01.parquet",
+      "estimated_bytes": 7934040
+    },
+    {
+      "kind": "events",
+      "start": "2022-01-01",
+      "end": "2022-02-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-01-01_2022-02-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-01-01_2022-02-01.parquet",
+      "estimated_bytes": 26107328288
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-01-01",
+      "end": "2022-02-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-01-01_2022-02-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-01-01_2022-02-01.parquet",
+      "estimated_bytes": 8025080
+    },
+    {
+      "kind": "events",
+      "start": "2022-02-01",
+      "end": "2022-03-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-02-01_2022-03-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-02-01_2022-03-01.parquet",
+      "estimated_bytes": 24226423938
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-02-01",
+      "end": "2022-03-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-02-01_2022-03-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-02-01_2022-03-01.parquet",
+      "estimated_bytes": 7241200
+    },
+    {
+      "kind": "events",
+      "start": "2022-03-01",
+      "end": "2022-04-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-03-01_2022-04-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-03-01_2022-04-01.parquet",
+      "estimated_bytes": 28287556963
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-03-01",
+      "end": "2022-04-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-03-01_2022-04-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-03-01_2022-04-01.parquet",
+      "estimated_bytes": 7972280
+    },
+    {
+      "kind": "events",
+      "start": "2022-04-01",
+      "end": "2022-05-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-04-01_2022-05-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-04-01_2022-05-01.parquet",
+      "estimated_bytes": 28065962436
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-04-01",
+      "end": "2022-05-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-04-01_2022-05-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-04-01_2022-05-01.parquet",
+      "estimated_bytes": 7665120
+    },
+    {
+      "kind": "events",
+      "start": "2022-05-01",
+      "end": "2022-06-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-05-01_2022-06-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-05-01_2022-06-01.parquet",
+      "estimated_bytes": 28791747332
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-05-01",
+      "end": "2022-06-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-05-01_2022-06-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-05-01_2022-06-01.parquet",
+      "estimated_bytes": 7723160
+    },
+    {
+      "kind": "events",
+      "start": "2022-06-01",
+      "end": "2022-07-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-06-01_2022-07-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-06-01_2022-07-01.parquet",
+      "estimated_bytes": 25724160262
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-06-01",
+      "end": "2022-07-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-06-01_2022-07-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-06-01_2022-07-01.parquet",
+      "estimated_bytes": 6863240
+    },
+    {
+      "kind": "events",
+      "start": "2022-07-01",
+      "end": "2022-08-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-07-01_2022-08-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-07-01_2022-08-01.parquet",
+      "estimated_bytes": 32045180756
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-07-01",
+      "end": "2022-08-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-07-01_2022-08-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-07-01_2022-08-01.parquet",
+      "estimated_bytes": 8004480
+    },
+    {
+      "kind": "events",
+      "start": "2022-08-01",
+      "end": "2022-09-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-08-01_2022-09-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-08-01_2022-09-01.parquet",
+      "estimated_bytes": 32722342146
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-08-01",
+      "end": "2022-09-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-08-01_2022-09-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-08-01_2022-09-01.parquet",
+      "estimated_bytes": 7853760
+    },
+    {
+      "kind": "events",
+      "start": "2022-09-01",
+      "end": "2022-10-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-09-01_2022-10-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-09-01_2022-10-01.parquet",
+      "estimated_bytes": 34367740033
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-09-01",
+      "end": "2022-10-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-09-01_2022-10-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-09-01_2022-10-01.parquet",
+      "estimated_bytes": 8000360
+    },
+    {
+      "kind": "events",
+      "start": "2022-10-01",
+      "end": "2022-11-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-10-01_2022-11-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-10-01_2022-11-01.parquet",
+      "estimated_bytes": 34859747850
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-10-01",
+      "end": "2022-11-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-10-01_2022-11-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-10-01_2022-11-01.parquet",
+      "estimated_bytes": 8876680
+    },
+    {
+      "kind": "events",
+      "start": "2022-11-01",
+      "end": "2022-12-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-11-01_2022-12-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-11-01_2022-12-01.parquet",
+      "estimated_bytes": 32139384781
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-11-01",
+      "end": "2022-12-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-11-01_2022-12-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-11-01_2022-12-01.parquet",
+      "estimated_bytes": 8591440
+    },
+    {
+      "kind": "events",
+      "start": "2022-12-01",
+      "end": "2023-01-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2022-12-01_2023-01-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2022-12-01_2023-01-01.parquet",
+      "estimated_bytes": 33089348929
+    },
+    {
+      "kind": "block_daily",
+      "start": "2022-12-01",
+      "end": "2023-01-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2022-12-01_2023-01-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2022-12-01_2023-01-01.parquet",
+      "estimated_bytes": 8879520
+    },
+    {
+      "kind": "events",
+      "start": "2023-01-01",
+      "end": "2023-02-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-01-01_2023-02-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-01-01_2023-02-01.parquet",
+      "estimated_bytes": 36511696268
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-01-01",
+      "end": "2023-02-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-01-01_2023-02-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-01-01_2023-02-01.parquet",
+      "estimated_bytes": 8883600
+    },
+    {
+      "kind": "events",
+      "start": "2023-02-01",
+      "end": "2023-03-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-02-01_2023-03-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-02-01_2023-03-01.parquet",
+      "estimated_bytes": 35416070418
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-02-01",
+      "end": "2023-03-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-02-01_2023-03-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-02-01_2023-03-01.parquet",
+      "estimated_bytes": 7994240
+    },
+    {
+      "kind": "events",
+      "start": "2023-03-01",
+      "end": "2023-04-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-03-01_2023-04-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-03-01_2023-04-01.parquet",
+      "estimated_bytes": 38443911483
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-03-01",
+      "end": "2023-04-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-03-01_2023-04-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-03-01_2023-04-01.parquet",
+      "estimated_bytes": 8822520
+    },
+    {
+      "kind": "events",
+      "start": "2023-04-01",
+      "end": "2023-05-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-04-01_2023-05-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-04-01_2023-05-01.parquet",
+      "estimated_bytes": 33556687597
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-04-01",
+      "end": "2023-05-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-04-01_2023-05-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-04-01_2023-05-01.parquet",
+      "estimated_bytes": 8468640
+    },
+    {
+      "kind": "events",
+      "start": "2023-05-01",
+      "end": "2023-06-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-05-01_2023-06-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-05-01_2023-06-01.parquet",
+      "estimated_bytes": 37715852785
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-05-01",
+      "end": "2023-06-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-05-01_2023-06-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-05-01_2023-06-01.parquet",
+      "estimated_bytes": 8800440
+    },
+    {
+      "kind": "events",
+      "start": "2023-06-01",
+      "end": "2023-07-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-06-01_2023-07-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-06-01_2023-07-01.parquet",
+      "estimated_bytes": 33728359171
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-06-01",
+      "end": "2023-07-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-06-01_2023-07-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-06-01_2023-07-01.parquet",
+      "estimated_bytes": 8531040
+    },
+    {
+      "kind": "events",
+      "start": "2023-07-01",
+      "end": "2023-08-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-07-01_2023-08-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-07-01_2023-08-01.parquet",
+      "estimated_bytes": 36306794487
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-07-01",
+      "end": "2023-08-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-07-01_2023-08-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-07-01_2023-08-01.parquet",
+      "estimated_bytes": 8838240
+    },
+    {
+      "kind": "events",
+      "start": "2023-08-01",
+      "end": "2023-09-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-08-01_2023-09-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-08-01_2023-09-01.parquet",
+      "estimated_bytes": 38277730227
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-08-01",
+      "end": "2023-09-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-08-01_2023-09-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-08-01_2023-09-01.parquet",
+      "estimated_bytes": 8863440
+    },
+    {
+      "kind": "events",
+      "start": "2023-09-01",
+      "end": "2023-10-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-09-01_2023-10-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-09-01_2023-10-01.parquet",
+      "estimated_bytes": 34749314583
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-09-01",
+      "end": "2023-10-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-09-01_2023-10-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-09-01_2023-10-01.parquet",
+      "estimated_bytes": 8560360
+    },
+    {
+      "kind": "events",
+      "start": "2023-10-01",
+      "end": "2023-11-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-10-01_2023-11-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-10-01_2023-11-01.parquet",
+      "estimated_bytes": 37351619298
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-10-01",
+      "end": "2023-11-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-10-01_2023-11-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-10-01_2023-11-01.parquet",
+      "estimated_bytes": 8864400
+    },
+    {
+      "kind": "events",
+      "start": "2023-11-01",
+      "end": "2023-12-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-11-01_2023-12-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-11-01_2023-12-01.parquet",
+      "estimated_bytes": 35329803399
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-11-01",
+      "end": "2023-12-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-11-01_2023-12-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-11-01_2023-12-01.parquet",
+      "estimated_bytes": 8573600
+    },
+    {
+      "kind": "events",
+      "start": "2023-12-01",
+      "end": "2024-01-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2023-12-01_2024-01-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2023-12-01_2024-01-01.parquet",
+      "estimated_bytes": 35896901679
+    },
+    {
+      "kind": "block_daily",
+      "start": "2023-12-01",
+      "end": "2024-01-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2023-12-01_2024-01-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2023-12-01_2024-01-01.parquet",
+      "estimated_bytes": 8843040
+    },
+    {
+      "kind": "events",
+      "start": "2024-01-01",
+      "end": "2024-02-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2024-01-01_2024-02-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2024-01-01_2024-02-01.parquet",
+      "estimated_bytes": 35713423679
+    },
+    {
+      "kind": "block_daily",
+      "start": "2024-01-01",
+      "end": "2024-02-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2024-01-01_2024-02-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2024-01-01_2024-02-01.parquet",
+      "estimated_bytes": 8841040
+    },
+    {
+      "kind": "events",
+      "start": "2024-02-01",
+      "end": "2024-03-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/events_2024-02-01_2024-03-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/events/events_2024-02-01_2024-03-01.parquet",
+      "estimated_bytes": 33883796461
+    },
+    {
+      "kind": "block_daily",
+      "start": "2024-02-01",
+      "end": "2024-03-01",
+      "sql_path": "data/metadata/bigquery/11b815ef_b12376751_b19336607/sql/block_daily_2024-02-01_2024-03-01.sql",
+      "target": "data/raw/bigquery/11b815ef_b12376751_b19336607/block_daily/block_daily_2024-02-01_2024-03-01.parquet",
+      "estimated_bytes": 8270000
+    }
+  ]
+}
