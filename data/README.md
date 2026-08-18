@@ -1,13 +1,12 @@
 # 데이터 저장·접근 가이드
 
 이 디렉터리는 Ethereum Mainnet의 Uniswap V3 WETH/USDT 0.05% pool 자료를
-수집하고 검증하며 재생성하는 코드와 메타데이터를 담는다. 실제 데이터는 Git 저장소나
-Conductor workspace 안이 아니라 기본적으로 `~/Data/uniswapdata`에 둔다. 이 Mac에서의
-실제 경로는 `/Users/seungjun/Data/uniswapdata`다.
+수집하고 검증하며 재생성하는 코드와 메타데이터를 담는다. 대용량 artifact는 Git에
+커밋하지 않고, 사용자가 선택한 별도의 데이터 루트에 저장한다.
 
 이 정책의 핵심은 다음과 같다.
 
-- workspace를 archive하거나 삭제해도 실제 데이터는 남는다.
+- repository checkout을 교체하거나 삭제해도 실제 데이터는 남는다.
 - 어느 checkout에서든 같은 외부 데이터 루트를 자동으로 찾는다.
 - Git에는 코드, 고정 snapshot config, [`manifest.json`](manifest.json), 문서와 작은
   테스트 fixture만 둔다.
@@ -17,7 +16,49 @@ Conductor workspace 안이 아니라 기본적으로 `~/Data/uniswapdata`에 둔
 출력 컬럼의 의미는 [`DATA_DICTIONARY.md`](DATA_DICTIONARY.md), 전체 연구 단계는
 [`../flow.md`](../flow.md)를 참고한다.
 
-## 1. 한 번만 준비하기
+## 1. 데이터 디렉터리 설정
+
+데이터 루트는 repository checkout 밖의 지속적인 로컬 디스크나 외장 디스크에 둔다.
+임시 디렉터리, CI checkout, 자동으로 정리되는 workspace는 사용하지 않는다. 위치를
+명시하려면 `UNISWAP_DATA_ROOT`를 설정한다.
+
+macOS 또는 Linux 예시:
+
+```bash
+export UNISWAP_DATA_ROOT="${HOME}/Data/uniswapdata"
+mkdir -p "${UNISWAP_DATA_ROOT}"
+```
+
+Windows PowerShell 예시:
+
+```powershell
+$env:UNISWAP_DATA_ROOT = "$HOME\Data\uniswapdata"
+New-Item -ItemType Directory -Force $env:UNISWAP_DATA_ROOT
+```
+
+외장 디스크나 별도 볼륨을 사용한다면 해당 mount 경로를 지정한다.
+
+```bash
+export UNISWAP_DATA_ROOT="/path/to/persistent-storage/uniswapdata"
+```
+
+지속적으로 사용할 경로라면 환경변수 설정을 shell profile이나 개발환경의 로컬 설정에
+추가한다. 개인별 절대 경로는 Git에 커밋하지 않는다.
+
+데이터 루트 우선순위는 다음과 같다.
+
+1. CLI의 전역 `--data-root`
+2. `UNISWAP_DATA_ROOT`
+3. 환경변수가 없을 때의 fallback: `Path.home() / "Data" / "uniswapdata"`
+
+한 번의 명령에만 다른 위치를 사용하려면 전역 옵션을 subcommand 앞에 둔다.
+
+```bash
+python data/scripts/dataset.py \
+  --data-root /path/to/persistent-storage/uniswapdata status
+```
+
+## 2. 환경 준비와 초기화
 
 저장소 루트에서 Python 환경을 준비하고 데이터 구조를 만든다.
 
@@ -30,10 +71,10 @@ python data/scripts/dataset.py init
 python data/scripts/dataset.py status
 ```
 
-기본 구조는 다음과 같다.
+초기화된 구조는 다음과 같다.
 
 ```text
-~/Data/uniswapdata/
+<DATA_ROOT>/
 ├── manifest.json
 ├── raw/bigquery/11b815ef_b12376751_b25779958/
 │   ├── events/
@@ -49,23 +90,7 @@ python data/scripts/dataset.py status
 전달본만으로도 파일별 row 수, 크기, SHA-256을 검증할 수 있다. `.runs/`는 새 수집과
 가공의 로컬 실행 기록이고 `.staging/`은 검증 전 임시 파일이다.
 
-데이터 루트 우선순위는 고정되어 있다.
-
-1. CLI의 전역 `--data-root`
-2. `UNISWAP_DATA_ROOT`
-3. `Path.home() / "Data" / "uniswapdata"`
-
-다른 위치가 필요하면 다음 중 하나를 사용한다. 전역 옵션은 subcommand 앞에 둔다.
-
-```bash
-export UNISWAP_DATA_ROOT=/Volumes/RESEARCH/uniswapdata
-python data/scripts/dataset.py status
-
-python data/scripts/dataset.py \
-  --data-root /Volumes/RESEARCH/uniswapdata status
-```
-
-## 2. 현재 snapshot과 무결성
+## 3. 현재 snapshot과 무결성
 
 고정 dataset ID는 `11b815ef_b12376751_b25779958`이고 범위는 pool 생성 block을
 포함하는 반열린 구간 `[12,376,751, 25,779,958)`이다.
@@ -90,7 +115,7 @@ python data/scripts/dataset.py verify
 처리·청구 bytes, maximum budget, SQL digest, QC, processing 결과와 폐기한 시도를 한 파일로
 통합한다. Billing project 이름은 재현 provenance일 뿐 기본 실행값이 아니다.
 
-## 3. 동업자에게 직접 전달하기
+## 4. 다른 연구자에게 직접 전달하기
 
 가장 단순한 방법은 외장 디스크나 `rsync` 가능한 로컬/마운트 디렉터리를 쓰는 것이다.
 보내는 사람이 완전한 전달 디렉터리를 만든다.
@@ -98,14 +123,14 @@ python data/scripts/dataset.py verify
 ```bash
 python data/scripts/dataset.py verify
 python data/scripts/dataset.py export \
-  --destination /Volumes/TRANSFER/uniswapdata
+  --destination /path/to/transfer/uniswapdata
 ```
 
 받는 사람은 자신의 기본 외부 데이터 루트로 가져와 검증한다.
 
 ```bash
 python data/scripts/dataset.py fetch \
-  --source /Volumes/TRANSFER/uniswapdata
+  --source /path/to/transfer/uniswapdata
 python data/scripts/dataset.py verify
 ```
 
@@ -114,9 +139,9 @@ python data/scripts/dataset.py verify
 
 ```bash
 rsync -a --partial --info=progress2 \
-  teammate:/srv/share/uniswapdata/ /Volumes/TRANSFER/uniswapdata/
+  researcher@example.org:/srv/share/uniswapdata/ /path/to/transfer/uniswapdata/
 python data/scripts/dataset.py fetch \
-  --source /Volumes/TRANSFER/uniswapdata
+  --source /path/to/transfer/uniswapdata
 ```
 
 `export`와 `fetch`는 manifest에 열거된 파일만 복사한다. 각 파일을 staging에 쓴 뒤
@@ -124,7 +149,7 @@ row 수·크기·SHA-256이 모두 맞을 때만 atomic rename한다. 중단 후
 검증된 파일은 건너뛴다. 목적지에 이름은 같지만 내용이 다른 파일이 있으면 절대
 덮어쓰지 않는다.
 
-## 4. BigQuery에서 재현하기
+## 5. BigQuery에서 재현하기
 
 Google credential은 파일이나 Git에 넣지 않는다. Application Default Credentials를
 사용하고 billing/quota project는 실행 때마다 명시한다.
@@ -171,7 +196,7 @@ python data/scripts/dataset.py recover --project JOB_OWNER_PROJECT_ID
 알린다. 이때 `collect`로 대신 재실행하지 않는다. 별도 비용 승인을 받은 뒤에만 위의
 dry-run/collect 절차로 진행한다.
 
-## 5. Processed·derived 재생성
+## 6. Processed·derived 재생성
 
 전체 raw snapshot이 검증된 뒤 다음 명령으로 position 자료를 다시 만든다.
 
@@ -179,7 +204,7 @@ dry-run/collect 절차로 진행한다.
 python data/scripts/dataset.py build
 ```
 
-이 단계는 같은 resolver를 사용하므로 workspace 아래 `data/raw`를 만들지 않는다.
+이 단계는 같은 resolver를 사용하므로 repository 아래 `data/raw`를 만들지 않는다.
 주요 출력은 다음과 같다.
 
 | 외부 데이터 루트의 경로 | 내용 |
@@ -204,17 +229,17 @@ fee_amount1 = sum(NFPM Collect.amount1) - sum(NFPM DecreaseLiquidity.amount1)
 
 ```bash
 python data/scripts/calculate_closed_returns.py \
-  --prices "$HOME/Data/uniswapdata/external/oracle/weth_usdt.parquet"
+  --prices "$UNISWAP_DATA_ROOT/external/oracle/weth_usdt.parquet"
 ```
 
-## 6. Git과 Conductor 규칙
+## 7. Git과 여러 checkout 운영
 
 - 실제 raw, processed, derived, external 파일은 Git에 추가하지 않는다.
-- Conductor의 **Files to copy**나 `.worktreeinclude`에 대용량 데이터 경로를 넣지 않는다.
-- workspace에 symlink를 만들 필요도 없다. 새 workspace는 기본 외부 경로를 자동으로
-  찾는다.
-- workspace archive/delete, branch reset, repository 삭제 또는 이 변경의 revert가
-  `/Users/seungjun/Data/uniswapdata`를 자동 삭제하지 않는다.
+- worktree 복사 설정이나 workspace별 파일 복제 기능에 대용량 데이터 경로를 넣지 않는다.
+- checkout마다 symlink를 만들 필요가 없다. 모든 checkout에서 같은
+  `UNISWAP_DATA_ROOT`를 사용한다.
+- branch reset이나 repository checkout 삭제는 외부 데이터 루트를 자동으로 삭제하지
+  않는다.
 - 외부 데이터 루트를 지우는 작업은 별도의 명시적 운영 작업이며 저장소 스크립트는 이를
   수행하지 않는다.
 - raw와 external은 immutable하게 보존하고, processed는 raw·config·code가 기록된 경우
@@ -224,7 +249,7 @@ Git에 들어가는 단일 `data/manifest.json`과 데이터 사전은 review �
 실행 기록은 외부 데이터 루트의 `.runs/`에 남는다. 일반 `git status`에는 대용량 파일이
 나타나지 않아야 한다.
 
-## 7. 연구 데이터 범위
+## 8. 연구 데이터 범위
 
 | Dimension | Fixed requirement |
 | --- | --- |

@@ -155,9 +155,9 @@ Before requesting approval, document:
 
 Prefer the single `data/manifest.json`, persistent links, and reproducible
 retrieval instructions over copied files. Store actual data outside every Git
-checkout at `~/Data/uniswapdata` (or the explicitly configured external root),
-as described in [the data guide](data/README.md). Clearly labeled synthetic
-fixtures may be included when they are small and required for tests.
+checkout in the location configured by `UNISWAP_DATA_ROOT`, as described in
+[the data guide](data/README.md). Clearly labeled synthetic fixtures may be
+included when they are small and required for tests.
 
 Never commit credentials, private RPC URLs, personal data, confidential
 material, or content whose redistribution rights are unclear. Keep local secrets

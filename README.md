@@ -5,8 +5,8 @@ risk measures for Uniswap V3 liquidity providers (LPs). The study asks when,
 why, and how much each measure helps explain realized LP returns.
 
 The repository contains the versioned collection and position-reconstruction
-code plus a checksum manifest. Large data artifacts live outside Git at
-`~/Data/uniswapdata`; empirical analysis and paper results are still in progress.
+code plus a checksum manifest. Large data artifacts live outside Git in a
+configurable data root; empirical analysis and paper results are still in progress.
 
 ## Research questions
 
