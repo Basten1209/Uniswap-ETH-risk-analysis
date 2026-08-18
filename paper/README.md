@@ -29,9 +29,9 @@ The paper will use the following top-level structure:
 
 ### Abstract
 
-State the two research questions, single-pool four-year sample, actual-position
-unit, empirical approach, supported results, and limitations. Results must not
-be drafted before the analysis exists.
+State the two research questions, fixed-pool sample and EDA-supported analytical
+interval, actual-position unit, empirical approach, supported results, and
+limitations. Results must not be drafted before the analysis exists.
 
 ### 1. Introduction
 
@@ -58,10 +58,10 @@ unit, horizon, assumptions, and relationship to realized return.
 
 ### 4. Data and Empirical Design
 
-Document the selected Ethereum Mainnet WETH/USDT pool, four-year period, actual
-LP-position sample, sources, transformations, validation, outcome and measure
-construction, market-regime definitions, statistical specifications, and
-identification limits.
+Document the fixed WETH/USDT 0.05% pool and creation-to-snapshot collection,
+EDA-supported analytical interval, actual LP-position sample, sources,
+transformations, validation, outcome and measure construction, market-regime
+definitions, statistical specifications, and identification limits.
 
 ### 5. Empirical Results
 

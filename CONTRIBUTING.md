@@ -3,8 +3,8 @@
 Thank you for contributing to **An Empirical Analysis of Uniswap V3 LP Risk
 Measures: Evidence from the WETH/USDT Pool**. This open research project compares
 impermanent loss (IL), loss-versus-rebalancing (LVR), and predictable loss (PL)
-as explanations of realized returns for actual LP positions in one Ethereum
-Mainnet WETH/USDT pool over four years. Every contribution should make that
+as explanations of realized returns for actual LP positions in the fixed
+Ethereum Mainnet WETH/USDT 0.05% pool. Every contribution should make that
 research easier to verify, reproduce, or understand.
 
 All changes must reach `main` through a pull request (PR). Do not push directly
@@ -35,7 +35,7 @@ reverted independently.
 | Contribution | Include in the PR |
 | --- | --- |
 | Research design or methodology | RQ1 or RQ2, realized-return outcome, affected risk measure or regime, proposed assumptions, limitations, and workflow stage |
-| Data methodology or pipeline | Selected WETH/USDT pool and contracts, four-year coverage, actual-position rules, source and retrieval method, provenance, validation checks, and data rights |
+| Data methodology or pipeline | Fixed WETH/USDT pool and contracts, full-history snapshot coverage, actual-position rules, source and retrieval method, provenance, validation checks, and data rights |
 | Research reference | Full citation, stable link, relevant return, IL, LVR, PL, regime or data-method tag, method, dataset, limitations, and review status |
 | Analysis code | Realized-return, IL, LVR, PL or regime definition, inputs, configuration, reproducible command, tests or reconciliation checks, and expected outputs |
 | Paper content | Supporting analysis output, citations, scope of the claim, limitations, and table or figure provenance |
@@ -183,10 +183,10 @@ that the working tree does not contain accidental changes.
 
 Also complete the checks that match your contribution:
 
-- **Research design:** confirm that the single-pool four-year sample, actual LP
-  positions, realized-return outcome, IL/LVR/PL measures, regime variables,
-  assumptions, exclusions, and exploratory versus confirmatory status are
-  explicit.
+- **Research design:** confirm that the fixed-pool snapshot, EDA-supported
+  analytical interval, actual LP positions, realized-return outcome, IL/LVR/PL
+  measures, regime variables, assumptions, exclusions, and exploratory versus
+  confirmatory status are explicit.
 - **Data:** run the available coverage, uniqueness, decoding, unit, provenance,
   and reconciliation checks; report their commands and results.
 - **Analysis:** run all relevant tests and the reproducibility entry point;

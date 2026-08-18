@@ -11,8 +11,8 @@ gates in the [research flow](../flow.md).
 ## Analytical objective
 
 The analysis will test when, why, and how much three LP risk measures explain
-realized returns for actual on-chain positions in one WETH/USDT pool over four
-years.
+realized returns for actual on-chain positions in the fixed WETH/USDT 0.05%
+pool over an EDA-supported analytical interval drawn from full-history data.
 
 | Research element | Fixed scope |
 | --- | --- |
@@ -62,9 +62,9 @@ must be predeclared. Historical regimes must not use future information.
 
 ## Planned analysis stages
 
-1. **Load the frozen study configuration.** Require the exact pool, four-year
-   window, position rules, data version, metric definitions, and empirical
-   specification.
+1. **Load the frozen study configuration.** Require the fixed-pool data
+   snapshot, EDA-supported analytical interval, position rules, data version,
+   metric definitions, and empirical specification.
 2. **Verify input quality.** Consume only datasets that passed the documented
    chain, coverage, decoding, unit, and reconciliation checks.
 3. **Reconstruct positions and cash flows.** Build histories for actual LP
