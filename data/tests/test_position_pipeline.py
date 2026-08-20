@@ -233,7 +233,7 @@ class PositionPipelineTest(unittest.TestCase):
         )
         prices = pd.DataFrame(
             {
-                "timestamp": ["2021-06-01T00:00:00Z", "2021-07-01T00:00:00Z"],
+                "timestamp": ["2021-05-31T23:59:59Z", "2021-06-30T23:59:59Z"],
                 "token0_price_usdt": ["2000", "2500"],
                 "token1_price_usdt": ["1", "1"],
             }
@@ -250,6 +250,21 @@ class PositionPipelineTest(unittest.TestCase):
         self.assertEqual(
             Decimal(row["lp_excess_return_vs_hodl_close"]), Decimal("-0.01")
         )
+
+    def test_closed_returns_do_not_use_same_second_price(self) -> None:
+        pool, nfpm = parse_raw_events(self.raw, POOL, NFPM)
+        _, clean, _ = reconstruct_positions(
+            pool, nfpm, NFPM, date(2021, 1, 1), date(2022, 1, 1)
+        )
+        prices = pd.DataFrame(
+            {
+                "timestamp": ["2021-06-01T00:00:00Z", "2021-07-01T00:00:00Z"],
+                "token0_price_usdt": ["2000", "2500"],
+                "token1_price_usdt": ["1", "1"],
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "no prior oracle observation"):
+            calculate_closed_returns(clean, prices, 18, 6, 60)
 
     def test_daily_block_gas_summary(self) -> None:
         blocks = pd.DataFrame(

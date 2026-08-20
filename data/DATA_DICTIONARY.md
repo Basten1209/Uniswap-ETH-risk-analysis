@@ -44,3 +44,19 @@
 | `lp_total_return_close_marked` | 초기 예치가치 대비 fee-inclusive LP return |
 | `lp_excess_return_vs_hodl_close` | 논문 방식의 HODL 대비 fee-inclusive 초과수익률 |
 | `il_return_vs_hodl_fee_exclusive` | fee 제외 principal의 HODL 대비 차이; 손실은 음수 |
+
+## Binance ETHUSDT 1초 Oracle
+
+`external/oracle/binance_ethusdt_1s/`에는 UTC 월별 Parquet과 변환
+`manifest.json`이 있다. Binance spot ETHUSDT는 중앙화 거래소의 외부 reference
+price이며 온체인 Oracle로 해석하지 않는다.
+
+| 컬럼 | 타입·단위 | 의미 |
+| --- | --- | --- |
+| `timestamp` | `timestamp[us, UTC]` | 1초 candle의 `open_time`; 온체인 event에는 같은 초가 아닌 strict-prior 행을 연결 |
+| `price` | `float64`, USDT/ETH | 해당 1초 candle의 `close`; 결측 초는 직전 관측값으로 forward-fill |
+| `volume` | `float64`, USDT | 해당 초의 `quote_volume`; 결측으로 생성한 초는 0 |
+
+출력은 최초 source timestamp부터 snapshot의 마지막 timestamp까지 정확히 1초 간격이며
+null과 중복 timestamp를 허용하지 않는다. 보간 여부는 데이터 컬럼을 늘리지 않고
+manifest의 월별 `imputed_rows`와 `gaps`에 기록한다.

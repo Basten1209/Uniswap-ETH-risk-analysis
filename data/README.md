@@ -225,11 +225,38 @@ fee_amount0 = sum(NFPM Collect.amount0) - sum(NFPM DecreaseLiquidity.amount0)
 fee_amount1 = sum(NFPM Collect.amount1) - sum(NFPM DecreaseLiquidity.amount1)
 ```
 
-외부 Oracle은 `external/` 아래에 놓고 종료 return을 계산할 수 있다.
+외부 Oracle은 `external/` 아래에 놓고 종료 return을 계산할 수 있다. 현재 지원하는
+표준 입력은 Binance spot ETHUSDT 1초봉을 UTC 월별 partition으로 정제한 dataset이다.
+
+원본은 repository 밖의 지속적인 경로에 보존하고 다음 명령으로 변환한다. 출력 기본값은
+`$UNISWAP_DATA_ROOT/external/oracle/binance_ethusdt_1s/`이다.
+
+```bash
+python data/scripts/prepare_binance_oracle.py \
+  --source-root "$HOME/Data/Binance_ETHUSDT_1s"
+```
+
+각 월별 Parquet은 `timestamp`, `price`, `volume` 세 컬럼만 가진다. `timestamp`는
+1초 candle의 UTC `open_time`, `price`는 `close`, `volume`은 USDT 단위
+`quote_volume`이다. 원본에 없는 초는 미래 값을 사용하지 않고 직전 price로 채우며
+volume은 0으로 둔다. 전체 보간 구간과 파일별 checksum은 Oracle dataset의
+`manifest.json`에 기록된다.
+
+기존 결과를 전체 SHA-256까지 다시 검사하려면 다음 명령을 사용한다.
+
+```bash
+python data/scripts/prepare_binance_oracle.py \
+  --source-root "$HOME/Data/Binance_ETHUSDT_1s" \
+  --verify-only
+```
+
+종료 return 계산기는 단일 CSV/Parquet 가격 파일과 월별 Oracle 디렉터리를 모두
+지원한다. 디렉터리 입력은 필요한 월만 순서대로 읽고, event timestamp와 같은 초의
+candle은 아직 완료되지 않은 것으로 보아 엄격히 이전 초의 close를 사용한다.
 
 ```bash
 python data/scripts/calculate_closed_returns.py \
-  --prices "$UNISWAP_DATA_ROOT/external/oracle/weth_usdt.parquet"
+  --prices "$UNISWAP_DATA_ROOT/external/oracle/binance_ethusdt_1s"
 ```
 
 ## 7. Git과 여러 checkout 운영

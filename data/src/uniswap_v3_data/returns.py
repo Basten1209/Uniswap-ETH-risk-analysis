@@ -56,6 +56,7 @@ def _attach_asof_prices(
         right_on=f"price_timestamp_{suffix}",
         direction="backward",
         tolerance=pd.Timedelta(seconds=max_age_seconds),
+        allow_exact_matches=False,
     )
     return (
         result.sort_values("_original_index", kind="stable")
