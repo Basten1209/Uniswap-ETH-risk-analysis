@@ -152,6 +152,59 @@ def command_build(args: argparse.Namespace) -> None:
     )
 
 
+def command_collect_transactions(args: argparse.Namespace) -> None:
+    root = initialize_data_root(args.data_root)
+    install_manifest(root)
+    arguments = [
+        "--config",
+        str(COLLECTION_CONFIG),
+        "--project",
+        args.project,
+        "--data-root",
+        str(root),
+        "--metadata-root",
+        str(root / ".runs"),
+        "--budget-bytes",
+        str(args.budget_bytes),
+    ]
+    if args.max_jobs is not None:
+        arguments.extend(["--max-jobs", str(args.max_jobs)])
+    if not args.dry_run:
+        arguments.append("--execute")
+    run_repository_script("collect_transaction_senders.py", arguments)
+    if not args.dry_run and args.max_jobs is None:
+        run_repository_script(
+            "register_transaction_artifacts.py",
+            [
+                "--config",
+                str(COLLECTION_CONFIG),
+                "--project",
+                args.project,
+                "--data-root",
+                str(root),
+                "--manifest",
+                str(REPOSITORY_MANIFEST),
+            ],
+        )
+        install_manifest(root)
+
+
+def command_build_operation_pairs(args: argparse.Namespace) -> None:
+    root = initialize_data_root(args.data_root)
+    install_manifest(root)
+    run_repository_script(
+        "build_operation_pairs.py",
+        [
+            "--config",
+            str(COLLECTION_CONFIG),
+            "--data-root",
+            str(root),
+            "--metadata-root",
+            str(root / ".runs"),
+        ],
+    )
+
+
 def command_recover(args: argparse.Namespace) -> None:
     root = initialize_data_root(args.data_root)
     install_manifest(root)
@@ -199,8 +252,23 @@ def build_parser() -> argparse.ArgumentParser:
     collect_parser.add_argument("--dry-run", action="store_true")
     collect_parser.set_defaults(handler=command_collect)
 
+    transaction_parser = subparsers.add_parser(
+        "collect-transactions",
+        help="collect transaction identity for target-pool Mint/Burn logs",
+    )
+    transaction_parser.add_argument("--project", required=True)
+    transaction_parser.add_argument("--budget-bytes", type=int, required=True)
+    transaction_parser.add_argument("--max-jobs", type=int)
+    transaction_parser.add_argument("--dry-run", action="store_true")
+    transaction_parser.set_defaults(handler=command_collect_transactions)
+
     build_data_parser = subparsers.add_parser("build", help="rebuild processed and derived layers")
     build_data_parser.set_defaults(handler=command_build)
+    pair_parser = subparsers.add_parser(
+        "build-operation-pairs",
+        help="build transaction-identified Pool Mint/Burn pairs",
+    )
+    pair_parser.set_defaults(handler=command_build_operation_pairs)
     recover_parser = subparsers.add_parser(
         "recover", help="recover still-retained completed BigQuery job results"
     )

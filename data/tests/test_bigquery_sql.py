@@ -10,6 +10,7 @@ sys.path.insert(0, str(DATA_DIR / "src"))
 sys.path.insert(0, str(DATA_DIR / "scripts"))
 
 import collect_bigquery
+import collect_transaction_senders
 import prepare_fixed_pool
 from uniswap_v3_data.config import (
     FixedPoolConfig,
@@ -35,6 +36,7 @@ FACTORY = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
 EVENTS = "bigquery-public-data.blockchain_analytics_ethereum_mainnet_us.decoded_events"
 LOGS = "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs"
 BLOCKS = "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks"
+TRANSACTIONS = "bigquery-public-data.goog_blockchain_ethereum_mainnet_us.transactions"
 
 
 class BigQuerySqlTest(unittest.TestCase):
@@ -69,6 +71,7 @@ class BigQuerySqlTest(unittest.TestCase):
             events_table=EVENTS,
             logs_table=LOGS,
             blocks_table=BLOCKS,
+            transactions_table=TRANSACTIONS,
         )
 
     def test_fixed_config_loads_with_project_override(self) -> None:
@@ -120,6 +123,25 @@ class BigQuerySqlTest(unittest.TestCase):
         self.assertIn("COUNT(*) AS block_count", sql)
         self.assertIn("GROUP BY date", sql)
         self.assertNotIn("block_hash", sql)
+
+    def test_transaction_query_is_partition_block_and_hash_bounded(self) -> None:
+        sql = collect_transaction_senders.build_transactions_query(
+            self.research.transactions_table,
+            date(2022, 1, 1),
+            date(2022, 2, 1),
+            self.research.start_block,
+            self.research.end_block_exclusive,
+        )
+        self.assertIn(TRANSACTIONS, sql)
+        self.assertIn("block_timestamp >= TIMESTAMP('2022-01-01')", sql)
+        self.assertIn("block_timestamp < TIMESTAMP('2022-02-01')", sql)
+        self.assertIn("block_number >= 12000000", sql)
+        self.assertIn("block_number < 24000001", sql)
+        self.assertIn("transaction_hash IN UNNEST(@transaction_hashes)", sql)
+        self.assertIn("from_address", sql)
+        self.assertIn("to_address", sql)
+        self.assertNotIn("input", sql)
+        self.assertNotIn("gas_used", sql)
 
     def test_run_id_uses_exact_block_snapshot(self) -> None:
         self.assertEqual(

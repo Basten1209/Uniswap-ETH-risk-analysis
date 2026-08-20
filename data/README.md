@@ -78,7 +78,8 @@ python data/scripts/dataset.py status
 ├── manifest.json
 ├── raw/bigquery/11b815ef_b12376751_b25779958/
 │   ├── events/
-│   └── block_daily/
+│   ├── block_daily/
+│   └── transactions/
 ├── processed/
 ├── derived/
 ├── external/
@@ -97,10 +98,10 @@ python data/scripts/dataset.py status
 
 | 항목 | Manifest 기준 |
 | --- | ---: |
-| Parquet 파일 | 128 |
-| Events / block-daily rows | 14,337,903 / 1,932 |
-| 전체 rows | 14,339,835 |
-| Logical bytes | 1,005,914,760 |
+| Parquet 파일 | 192 |
+| Events / block-daily / transaction rows | 14,337,903 / 1,932 / 103,561 |
+| 전체 rows | 14,443,396 |
+| Logical bytes | 1,011,093,566 |
 | 허용 partial 파일 | 0 |
 
 빠른 보유 현황은 `status`, 모든 Parquet footer·크기·hash 검사는 `verify`로 확인한다.
@@ -182,6 +183,23 @@ SHA-256으로 재현한다. `decoded_events`에는 canonical NFPM `IncreaseLiqui
 실제 사례가 있어 lifecycle 원천으로 쓰지 않고 raw `logs` topic/data를 로컬에서
 디코딩한다. 기존 raw month는 immutable하게 건너뛴다.
 
+고정 pool의 Mint/Burn transaction sender는 별도 월별 query로 수집한다. 전체 실행이
+성공하면 64개 transaction artifact를 repository와 runtime manifest에 등록한다.
+
+```bash
+python data/scripts/dataset.py collect-transactions \
+  --project YOUR_PROJECT_ID \
+  --budget-bytes YOUR_TOTAL_BYTE_LIMIT \
+  --dry-run
+
+python data/scripts/dataset.py collect-transactions \
+  --project YOUR_PROJECT_ID \
+  --budget-bytes YOUR_TOTAL_BYTE_LIMIT
+```
+
+각 월의 `maximum_bytes_billed`는 dry-run 추정치의 110%이며, 재실행 시에는 이미
+완료된 query와 남은 query maximum을 합산해 전체 byte budget을 검사한다.
+
 ### 아직 보존된 job result 복구
 
 이미 완료된 BigQuery job 결과가 보존되어 있다면 새 query를 만들지 않고 복구할 수
@@ -215,6 +233,25 @@ python data/scripts/dataset.py build
 | `processed/block_daily/block_daily.parquet` | 일별 base fee·gas utilization |
 | `derived/positions/all_target_positions.parquet` | 식별된 전체 target positions |
 | `derived/positions/clean_closed_positions.parquet` | 보수적인 clean-closed 표본 |
+| `processed/transaction_senders.parquet` | Pool Mint/Burn transaction별 LP wallet과 호출 대상 |
+| `processed/pool_liquidity_operations.parquet` | Pool Mint/Burn에 wallet·manager·NFPM 연결 정보를 결합한 operation |
+| `derived/operation_pairs/all_pairs.parquet` | 동일 wallet·manager·range·liquidity를 FIFO로 연결한 전체 exact pair |
+| `derived/operation_pairs/same_block_pairs.parquet` | EDA에서 JIT/MEV 후보군으로 분류하는 동일 block pair |
+| `derived/operation_pairs/non_same_block_pairs.parquet` | pool 전 기간 risk 분석의 기본 표본 |
+| `derived/operation_pairs/strict_pairs.parquet` | ambiguity와 중간 same-range operation까지 제거한 민감도 표본 |
+
+operation-pair 자료는 다음 명령으로 재생성한다.
+
+```bash
+python data/scripts/dataset.py build-operation-pairs
+```
+
+현재 snapshot에서 `all_pairs`는 41,671개다. EDA는 전체 pair를 사용하되 동일 block에서
+Mint와 Burn이 모두 발생한 30,865개를 `same_block_jit_mev_candidate`로 별도 보고한다.
+이 분류는 연구의 operational proxy이며 행위자의 의도를 직접 입증하지 않는다. Pool
+전체 기간의 primary risk 분석은 이 cohort를 제외한 `non_same_block_pairs` 10,806개를
+사용한다. 추가 pair 품질 조건을 적용한 `strict_pairs`는 10,723개이며 sensitivity
+analysis에 사용한다.
 
 `is_clean_closed`는 단일 initial increase, 단일 full decrease, NFT mint와 burn, 소유권
 이전 없음, 단일 tick range, snapshot 내부의 생성·인출·정산, 음수가 아닌 계산 fee를
