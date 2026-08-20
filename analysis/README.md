@@ -26,6 +26,25 @@ The exact return construction, metric formulas, horizons, statistical models,
 regime definitions, and numerical tolerances remain TBD. They must be versioned
 before confirmatory results are produced.
 
+## Future cross-pool validation
+
+After the primary WETH/USDT study is complete, a separate follow-up study will
+apply its frozen empirical design to the Ethereum Mainnet Uniswap V3 WETH/USDC
+0.05% pool (`0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640`), which interfaces may display
+as ETH/USDC. This comparison holds the network, protocol version, and fee tier
+constant while changing the quote stablecoin and pool contract.
+
+Before examining outcomes from the validation pool, freeze the primary study's
+measure definitions, position rules, analytical window, return horizon, regime
+construction, model specifications, and evaluation criteria. Apply those choices
+unchanged unless a pool-specific incompatibility is documented in advance.
+
+The validation pool must use separate raw, processed, and derived datasets and a
+separate empirical-design version. Do not pool its observations with WETH/USDT
+observations in the primary analysis. The follow-up will test whether the
+predeclared signals replicate and assess pool or stablecoin dependence and
+generalizability; it does not assume that the primary findings will reproduce.
+
 ## Measure construction
 
 | Item | Analytical role | Required distinctions |
