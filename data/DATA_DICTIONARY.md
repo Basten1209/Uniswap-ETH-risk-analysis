@@ -68,6 +68,42 @@ sender를 `lp_wallet`, Pool event owner를 `manager_address`로 결합한다. Pa
 | `lp_excess_return_vs_hodl_close` | 논문 방식의 HODL 대비 fee-inclusive 초과수익률 |
 | `il_return_vs_hodl_fee_exclusive` | fee 제외 principal의 HODL 대비 차이; 손실은 음수 |
 
+## `non_same_block_pair_returns.parquet`
+
+`derived/returns/non_same_block_pair_returns.parquet`은 10,806개 multi-block operation
+pair 중 fee identity 구간이 겹치는 11개를 비례 배분 없이 제외한 10,795개
+fee/return 분석 표본이다. 제외 operation ID와 사유는
+`.runs/processing/build_pair_returns_qc.json`에 기록한다.
+
+| 컬럼 | 의미 |
+| --- | --- |
+| `fee_analysis_included` | main output은 모두 `true`; build 단계의 포함 판정 증거 |
+| `fee_exclusion_reason` | main output은 모두 null; 제외된 11개의 사유는 QC JSON에 기록 |
+| `fee_attribution_source` | `nfpm_token` 또는 `pool_position`; Collect를 찾는 on-chain identity |
+| `interim_collect_count` | entry 뒤부터 exit transaction 전까지 귀속된 실제 Collect 수 |
+| `exit_collect_count` | matched Burn 뒤 같은 exit transaction에서 귀속된 Collect 수 |
+| `exit_collect_observed` | 위 exit Collect가 관측되었는지 여부 |
+| `exit_collect_covers_principal` | exit Collect가 두 token 모두의 matched Burn principal 이상인지 여부 |
+| `realized_fee{0,1}_raw` | interim Collect 합계와 exit Collect에서 principal을 뺀 realized fee의 원단위 합계 |
+| `fee_complete_exact` | 기존 보수적 clean-closed token과 직접 일치하는 검증 subset 표시; 별도 fee 계산식이 아님 |
+| `token{0,1}_price_usdt_{entry,exit}` | 각 event timestamp보다 엄격히 이전인 Binance 1초 close |
+| `initial_wealth_usdt` | entry token amounts를 entry 가격으로 평가한 예치 가치 |
+| `principal_exit_value_usdt` | matched Burn token amounts를 exit 가격으로 평가한 가치 |
+| `realized_fee_value_usdt` | 두 token의 realized fee를 exit 가격으로 평가한 가치 |
+| `lp_exit_value_realized_fee_usdt` | exit principal과 realized fee의 합 |
+| `hodl_exit_value_usdt` | 최초 예치 token을 그대로 보유했을 때의 exit 가치 |
+| `lp_total_return_realized_fee` | `(LP exit value - initial wealth) / initial wealth` |
+| `lp_excess_return_vs_hodl_realized_fee` | `(LP exit value - HODL exit value) / HODL exit value` |
+| `fee_return_on_initial_wealth` | exit 가격으로 평가한 realized fee / initial wealth |
+| `holding_days` | `holding_seconds / 86,400` |
+| `realized_daily_log_return` | `log(1 + total return) / holding_days` |
+| `realized_daily_return_geometric` | `exp(realized_daily_log_return) - 1` |
+| `realized_daily_return_simple` | `total return / holding_days`; 단순 일할 환산 민감도 지표 |
+
+종료 transaction의 Collect가 없을 때 `realized_fee{0,1}_raw`에는 그 시점에 새로
+실현된 fee를 0으로 더한다. 이는 미수령 accrued fee를 추정하거나 0이라고 가정하는
+처리가 아니다. 금액 컬럼은 gas cost를 제외하며 fee는 exit 가격으로 mark한다.
+
 ## Binance ETHUSDT 1초 Oracle
 
 `external/oracle/binance_ethusdt_1s/`에는 UTC 월별 Parquet과 변환

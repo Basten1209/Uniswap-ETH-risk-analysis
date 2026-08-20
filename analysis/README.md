@@ -1,12 +1,49 @@
 # Analysis Roadmap
 
-This directory will contain the code that converts validated Ethereum Mainnet
-Uniswap V3 data into position-level returns, risk measures, and empirical
-results. It currently contains documentation only; no notebooks, modules, tests,
-or results have been implemented.
+This directory contains the exploratory analysis that turns validated Ethereum
+Mainnet Uniswap V3 data into reviewable population and market summaries. Core
+reconstruction and return calculations remain reusable code under `data/src`;
+notebooks consume those derived datasets instead of redefining accounting logic.
 
 Read the [data methodology](../data/) before adding analysis and follow the stage
 gates in the [research flow](../flow.md).
+
+## Implemented EDA
+
+[`notebooks/eda.ipynb`](notebooks/eda.ipynb) is a clean-kernel executable overview
+of the fixed WETH/USDT pool. It reports the raw-event-to-position reconstruction
+funnel and removes 11 overlapping fee identities before defining the 41,660-pair
+analytical population. Counts and shares are shown for the full snapshot and for
+the fully observed `[2021-07-01, 2026-07-01)` sample: 40,259 total pairs, 30,101
+same-block pairs, and 10,158 multi-block pairs.
+
+The notebook plots active pair count and raw liquidity including intraday
+same-block activity; distributions and daily mean/median series for lifetime
+and entry liquidity value with 30-day moving averages; observed realized fee,
+fee-inclusive return, daily return, size versus lifetime, lifetime and size
+versus daily return, and daily
+realized volatility versus EOD active-position count. It also separates the
+all-day and positive-activity-day relationships between same-block pair count,
+10-minute realized volatility, and 30-day historical volatility. These three
+series are also aligned in a shared-axis time-series figure with daily values and
+30-day means where appropriate. Daily pool swap count is compared against both
+volatility measures, and swap count and USDT-leg volume are included as
+market-activity context.
+
+The same notebook also plots Binance ETHUSDT daily close and 30-day annualized
+historical volatility, daily realized volatility from 10-minute returns, and
+FRED SOFR with calendar-day forward-fill. Its full-period fee/return dataset
+excludes the 11 overlapping fee-attribution pairs instead of allocating their
+fees pro rata; the boundary-complete EDA period leaves 10,158 observations. See
+the [data dictionary](../data/DATA_DICTIONARY.md) for the accounting convention
+and column definitions.
+
+Run it from the repository root after rebuilding pair returns:
+
+```bash
+python data/scripts/dataset.py build-pair-returns
+jupyter nbconvert --to notebook --execute --inplace analysis/notebooks/eda.ipynb
+```
 
 ## Analytical objective
 

@@ -205,6 +205,24 @@ def command_build_operation_pairs(args: argparse.Namespace) -> None:
     )
 
 
+def command_build_pair_returns(args: argparse.Namespace) -> None:
+    root = initialize_data_root(args.data_root)
+    install_manifest(root)
+    arguments = [
+        "--config",
+        str(COLLECTION_CONFIG),
+        "--data-root",
+        str(root),
+        "--metadata-root",
+        str(root / ".runs"),
+        "--max-price-age-seconds",
+        str(args.max_price_age_seconds),
+    ]
+    if args.oracle_root is not None:
+        arguments.extend(["--oracle-root", str(args.oracle_root)])
+    run_repository_script("build_pair_returns.py", arguments)
+
+
 def command_recover(args: argparse.Namespace) -> None:
     root = initialize_data_root(args.data_root)
     install_manifest(root)
@@ -269,6 +287,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="build transaction-identified Pool Mint/Burn pairs",
     )
     pair_parser.set_defaults(handler=command_build_operation_pairs)
+    return_parser = subparsers.add_parser(
+        "build-pair-returns",
+        help="build realized-fee returns for non-same-block operation pairs",
+    )
+    return_parser.add_argument("--oracle-root", type=Path)
+    return_parser.add_argument("--max-price-age-seconds", type=int, default=3600)
+    return_parser.set_defaults(handler=command_build_pair_returns)
     recover_parser = subparsers.add_parser(
         "recover", help="recover still-retained completed BigQuery job results"
     )

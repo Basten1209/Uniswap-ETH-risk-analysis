@@ -239,6 +239,7 @@ python data/scripts/dataset.py build
 | `derived/operation_pairs/same_block_pairs.parquet` | EDA에서 JIT/MEV 후보군으로 분류하는 동일 block pair |
 | `derived/operation_pairs/non_same_block_pairs.parquet` | pool 전 기간 risk 분석의 기본 표본 |
 | `derived/operation_pairs/strict_pairs.parquet` | ambiguity와 중간 same-range operation까지 제거한 민감도 표본 |
+| `derived/returns/non_same_block_pair_returns.parquet` | non-same-block pair의 observed realized fee와 fee-inclusive return |
 
 operation-pair 자료는 다음 명령으로 재생성한다.
 
@@ -252,6 +253,25 @@ Mint와 Burn이 모두 발생한 30,865개를 `same_block_jit_mev_candidate`로 
 전체 기간의 primary risk 분석은 이 cohort를 제외한 `non_same_block_pairs` 10,806개를
 사용한다. 추가 pair 품질 조건을 적용한 `strict_pairs`는 10,723개이며 sensitivity
 analysis에 사용한다.
+
+10,806개 non-same-block pair의 realized fee와 return은 다음 명령으로 재생성한다.
+
+```bash
+python data/scripts/dataset.py build-pair-returns
+```
+
+fee attribution은 연결이 일관된 경우 NFPM token ID를, 그렇지 않은 경우 Pool의
+`(manager, tick_lower, tick_upper)` identity를 사용한다. 보유 중 실제 `Collect`는
+realized fee이고, 종료 transaction에서는 matched `Burn` 뒤의 `Collect`에서 Burn
+principal을 뺀 금액을 realized fee로 잡는다. 종료 `Collect`가 없으면 종료 시점에
+실현된 fee를 0으로 기록하며, 이는 미수령 accrued fee가 0이라는 뜻이 아니다. fee는
+종료 ETHUSDT 가격으로 평가하고 gas cost는 포함하지 않는다.
+
+동일 fee identity의 보유 구간이 겹쳐 개별 `Collect`를 유일하게 귀속할 수 없는 11개
+pair에는 비례 배분을 하지 않고 return dataset에서 제외한다. 제외 operation ID와 사유는
+`.runs/processing/build_pair_returns_qc.json`에 기록한다. 따라서 현재 fee/return 출력과
+분석 표본은 10,795개다. 이 중 기존의 보수적인 clean-closed 조건까지 충족한 548개에는
+`fee_complete_exact = true`가 붙지만, 계산식은 나머지 포함 표본과 동일하다.
 
 `is_clean_closed`는 단일 initial increase, 단일 full decrease, NFT mint와 burn, 소유권
 이전 없음, 단일 tick range, snapshot 내부의 생성·인출·정산, 음수가 아닌 계산 fee를
