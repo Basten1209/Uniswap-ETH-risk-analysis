@@ -15,6 +15,7 @@ DATA_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DATA_DIR / "src"))
 
 from uniswap_v3_data.config import load_config
+from uniswap_v3_data.oracle import load_partitioned_oracle_prices
 from uniswap_v3_data.returns import calculate_closed_returns
 from uniswap_v3_data.paths import initialize_data_root, resolve_data_root
 
@@ -69,7 +70,17 @@ def main() -> None:
         data_root / "derived" / "returns" / "clean_closed_returns.parquet"
     )
     positions = read_table(positions_path)
-    prices = read_table(args.prices)
+    oracle_metadata: dict[str, object] = {}
+    if args.prices.is_dir():
+        required_timestamps = pd.concat(
+            [positions["entry_timestamp"], positions["exit_timestamp"]],
+            ignore_index=True,
+        )
+        prices, oracle_metadata = load_partitioned_oracle_prices(
+            args.prices, required_timestamps, args.max_price_age_seconds
+        )
+    else:
+        prices = read_table(args.prices)
     result = calculate_closed_returns(
         positions,
         prices,
@@ -82,24 +93,31 @@ def main() -> None:
     temporary = output_path.with_suffix(".parquet.partial")
     result.to_parquet(temporary, index=False, compression="zstd")
     temporary.replace(output_path)
+    price_provenance: dict[str, object] = {
+        "prices_path": str(args.prices),
+    }
+    if args.prices.is_dir():
+        price_provenance.update(oracle_metadata)
+    else:
+        price_provenance["prices_sha256"] = sha256(args.prices)
     metadata = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "config": args.config.name,
         "config_sha256": sha256(args.config),
         "positions_path": positions_path.name,
         "positions_sha256": sha256(positions_path),
-        "prices_path": args.prices.name,
-        "prices_sha256": sha256(args.prices),
         "output_path": output_path.name,
         "output_sha256": sha256(output_path),
         "row_count": len(result),
         "max_price_age_seconds": args.max_price_age_seconds,
         "valuation_convention": (
-            "entry deposits valued at last oracle price at/before entry; principal and "
-            "lifetime fees valued at last oracle price at/before final liquidity decrease; "
-            "collected fee tokens assumed held until exit; gas excluded"
+            "entry deposits valued at the last oracle price strictly before entry; "
+            "principal and lifetime fees valued at the last oracle price strictly before "
+            "final liquidity decrease; collected fee tokens assumed held until exit; "
+            "gas excluded"
         ),
         "fee_identity": "sum(NFPM Collect) - sum(NFPM DecreaseLiquidity principal)",
+        **price_provenance,
     }
     metadata_path = metadata_root / "processing" / "closed_returns.json"
     metadata_path.parent.mkdir(parents=True, exist_ok=True)

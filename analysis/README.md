@@ -26,6 +26,48 @@ The exact return construction, metric formulas, horizons, statistical models,
 regime definitions, and numerical tolerances remain TBD. They must be versioned
 before confirmatory results are produced.
 
+## EDA universe and risk-analysis cohort
+
+For dataset `11b815ef_b12376751_b25779958`, describe the sample in the
+following order. The full immutable raw snapshot has 14,443,396 rows:
+14,337,903 event rows, 1,932 daily block rows, and 103,561 transaction-identity
+rows. Of the decoded target-pool events, 51,428 are Mint and 56,767 are Burn,
+giving 108,195 liquidity operations. Exact FIFO matching on LP wallet, manager,
+tick range, and absolute liquidity produces 41,671 observations in
+`all_pairs.parquet`.
+
+EDA uses all 41,671 operation pairs. It must identify the 30,865 pairs whose
+Mint and Burn occur in the same block as a separate
+`same_block_jit_mev_candidate` cohort. For this study that cohort is the
+operational proxy for JIT/MEV activity. The label is a reproducible event-timing
+classification, not proof of an actor's intent or that every observation is an
+attack.
+
+The primary full-period pool risk analysis excludes that same-block cohort and
+uses the 10,806 observations in `non_same_block_pairs.parquet`. The 10,723-row
+`strict_pairs.parquet` additionally removes exact-pair ambiguity and intervening
+same-range liquidity activity; use it as a quality-controlled sensitivity
+sample rather than silently substituting it for the primary risk cohort.
+
+## Future cross-pool validation
+
+After the primary WETH/USDT study is complete, a separate follow-up study will
+apply its frozen empirical design to the Ethereum Mainnet Uniswap V3 WETH/USDC
+0.05% pool (`0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640`), which interfaces may display
+as ETH/USDC. This comparison holds the network, protocol version, and fee tier
+constant while changing the quote stablecoin and pool contract.
+
+Before examining outcomes from the validation pool, freeze the primary study's
+measure definitions, position rules, analytical window, return horizon, regime
+construction, model specifications, and evaluation criteria. Apply those choices
+unchanged unless a pool-specific incompatibility is documented in advance.
+
+The validation pool must use separate raw, processed, and derived datasets and a
+separate empirical-design version. Do not pool its observations with WETH/USDT
+observations in the primary analysis. The follow-up will test whether the
+predeclared signals replicate and assess pool or stablecoin dependence and
+generalizability; it does not assume that the primary findings will reproduce.
+
 ## Measure construction
 
 | Item | Analytical role | Required distinctions |
@@ -72,8 +114,9 @@ must be predeclared. Historical regimes must not use future information.
    inputs.
 4. **Construct the outcome and measures.** Produce realized return, IL, LVR, and
    PL at the predeclared unit and horizon without overwriting inputs.
-5. **Describe the sample.** Report coverage, missingness, distributions, and
-   position-level exclusions before model estimates.
+5. **Describe the sample.** Report coverage, missingness, distributions, the
+   same-block JIT/MEV candidate cohort, and position-level exclusions before
+   model estimates.
 6. **Estimate full-sample explanatory power.** Apply the frozen specification to
    each measure and report comparable model outputs and diagnostics.
 7. **Compare the measures.** Evaluate their relative explanatory power using the

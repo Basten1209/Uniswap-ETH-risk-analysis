@@ -40,6 +40,7 @@ class ResearchConfig:
     events_table: str
     logs_table: str
     blocks_table: str
+    transactions_table: str
 
 
 @dataclass(frozen=True)
@@ -117,10 +118,12 @@ def load_config(
     events_table = str(bigquery["events_table"]).strip(" `")
     logs_table = str(bigquery["logs_table"]).strip(" `")
     blocks_table = str(bigquery["blocks_table"]).strip(" `")
+    transactions_table = str(bigquery["transactions_table"]).strip(" `")
     if (
         events_table.count(".") != 2
         or logs_table.count(".") != 2
         or blocks_table.count(".") != 2
+        or transactions_table.count(".") != 2
     ):
         raise ValueError("BigQuery table names must use project.dataset.table")
     pool_address = _address(payload["pool_address"], "pool_address")
@@ -150,6 +153,7 @@ def load_config(
         events_table=events_table,
         logs_table=logs_table,
         blocks_table=blocks_table,
+        transactions_table=transactions_table,
     )
 
 

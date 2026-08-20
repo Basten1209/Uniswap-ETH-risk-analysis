@@ -45,6 +45,14 @@ filters, the analytical window, return horizon, and sampling frequency are
 chosen after full-history EDA and then frozen in the empirical design. See the
 versioned manifest and BigQuery workflow in [`data/`](data/).
 
+The WETH/USDT 0.05% pool is the sole primary pool for the current study. A
+separate follow-up study will apply the frozen empirical design to the Ethereum
+Mainnet Uniswap V3 WETH/USDC 0.05% pool
+(`0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640`) to evaluate replication and
+external validity. That follow-up is not part of the current sample or an
+in-study robustness check, and observations from the two pools will not be
+pooled in the primary analysis.
+
 ## Risk measures and outcome
 
 | Item | Role in the study |

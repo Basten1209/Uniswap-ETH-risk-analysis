@@ -168,15 +168,18 @@ class RepositoryManifestTest(unittest.TestCase):
     def test_legacy_metadata_was_preserved_in_one_manifest(self) -> None:
         manifest = load_manifest(DATA_DIR / "manifest.json")
         self.assertEqual(manifest["dataset_id"], "11b815ef_b12376751_b25779958")
-        self.assertEqual(len(manifest["artifacts"]), 128)
-        self.assertEqual(manifest["totals"]["rows"], 14_339_835)
-        self.assertEqual(manifest["totals"]["size_bytes"], 1_005_914_760)
+        self.assertEqual(len(manifest["artifacts"]), 192)
+        self.assertEqual(manifest["totals"]["rows"], 14_443_396)
+        self.assertEqual(manifest["totals"]["size_bytes"], 1_011_093_566)
         self.assertEqual(manifest["metadata_migration"]["source_file_count"], 273)
         self.assertEqual(len(manifest["collection_plans"]), 8)
         self.assertEqual(len(manifest["quality"]["source_shards"]), 3)
         self.assertEqual(
-            len({item["query"]["job_id"] for item in manifest["artifacts"]}), 128
+            len({item["query"]["job_id"] for item in manifest["artifacts"]}), 192
         )
+        self.assertEqual(manifest["transaction_collection"]["file_count"], 64)
+        self.assertEqual(manifest["transaction_collection"]["row_count"], 103_561)
+        self.assertEqual(manifest["source"]["billing_projects"]["uniswapdata4"], 64)
         for artifact in manifest["artifacts"]:
             self.assertTrue(artifact["query"]["sql_sha256"])
             self.assertIn("total_bytes_billed", artifact["query"])
