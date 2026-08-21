@@ -4,9 +4,10 @@ This repository is an open research workspace for an empirical comparison of
 risk measures for Uniswap V3 liquidity providers (LPs). The study asks when,
 why, and how much each measure helps explain realized LP returns.
 
-The repository contains the versioned collection and position-reconstruction
-code plus a checksum manifest. Large data artifacts live outside Git in a
-configurable data root; empirical analysis and paper results are still in progress.
+The repository contains the versioned collection, position reconstruction,
+realized-return, and IL/LVR/Predictable-Loss code plus checksum manifests. Large
+data artifacts live outside Git in a configurable data root; confirmatory
+econometric analysis and paper results are still in progress.
 
 ## Research questions
 
@@ -62,12 +63,12 @@ pooled in the primary analysis.
 | Predictable loss (PL) | Measures the predictable, unhedgeable loss of liquidity provision relative to its defined self-financing benchmark |
 | Realized LP return | The outcome whose relationship with IL, LVR, and PL will be estimated |
 
-PL means **predictable loss**, not profit and loss. Its operational definition
-will follow the relevant literature, including
+PL means **predictable loss**, not profit and loss. Its implemented operational
+definition follows the relevant literature, including
 [Cartea, Drissi, and Monga](https://doi.org/10.1080/1350486X.2023.2277957).
-All three measure definitions, benchmarks, units, and horizons must be frozen
-before confirmatory analysis. Fee income remains an input to realized LP return,
-not a fourth risk measure.
+The versioned risk build keeps native signs and common loss-positive,
+initial-capital-normalized values. Fee income remains an input to realized LP
+return, not a fourth risk measure.
 
 ## Regime analysis
 
@@ -116,6 +117,7 @@ objective.
 | [`flow.md`](flow.md) | End-to-end research workflow and stage gates |
 | [`data/`](data/) | Data scope, provenance, processing, and validation methodology |
 | [`analysis/`](analysis/) | Metric construction and empirical-analysis roadmap |
+| [`data_processing.ipynb`](data_processing.ipynb) | Reproducible IL/LVR/PL tables and requested portfolio/representative-position charts |
 | [`research-reference/`](research-reference/) | Literature catalog and citation rules |
 | [`paper/`](paper/) | Manuscript structure and publication workflow |
 
