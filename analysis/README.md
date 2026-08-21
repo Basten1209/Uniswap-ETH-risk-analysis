@@ -1,9 +1,11 @@
 # Analysis Roadmap
 
 This directory contains the exploratory analysis that turns validated Ethereum
-Mainnet Uniswap V3 data into reviewable population and market summaries. Core
-reconstruction and return calculations remain reusable code under `data/src`;
-notebooks consume those derived datasets instead of redefining accounting logic.
+Mainnet Uniswap V3 data into reviewable population, market, and risk summaries.
+Core reconstruction and return calculations remain reusable code under
+`data/src`; risk formulas and event-driven construction live under
+`analysis/src`; notebooks consume those modules instead of redefining accounting
+logic.
 
 Read the [data methodology](../data/) before adding analysis and follow the stage
 gates in the [research flow](../flow.md).
@@ -45,6 +47,37 @@ python data/scripts/dataset.py build-pair-returns
 jupyter nbconvert --to notebook --execute --inplace analysis/notebooks/eda.ipynb
 ```
 
+## Implemented IL/LVR/Predictable-Loss build
+
+[`../data_processing.ipynb`](../data_processing.ipynb) is a clean-kernel
+executable presentation of the versioned `il-lvr-pl-v1` build. The primary
+sample is the 10,795-row return-comparable multi-block operation-pair dataset;
+the 10,718 strict pairs remain a sensitivity subset. The build uses exact
+`sqrt_price_x96` and blockchain event order, strict-prior Binance prices, and a
+frozen SOFR snapshot. Fees and gas do not enter IL, LVR, or PL.
+
+IL compares fee-exclusive principal with the actual deposited-asset HODL
+benchmark. Primary LVR is the external-price self-financing rebalancing gap;
+CEX quadratic-variation estimates at 1 second, 5 seconds, and 1 minute are
+robustness outputs. Predictable Loss is the exact discrete concavity cost on the
+internal pool-price path, with SOFR accrued only on an already accumulated
+replication gap. The old full-WETH-inventory SOFR charge is not PL and is no
+longer produced.
+
+Prepare the versioned SOFR input once, then build or execute the notebook without
+network access:
+
+```bash
+python analysis/scripts/prepare_sofr.py
+python analysis/scripts/build_risk_metrics.py
+jupyter nbconvert --to notebook --execute data_processing.ipynb \
+  --output data_processing.executed.ipynb
+```
+
+Outputs and their run manifest are written under
+`$UNISWAP_DATA_ROOT/derived/risk_metrics/v1/`; figures are saved in its
+`figures/` directory.
+
 ## Analytical objective
 
 The analysis will test when, why, and how much three LP risk measures explain
@@ -59,9 +92,11 @@ pool over an EDA-supported analytical interval drawn from full-history data.
 | Primary comparison | Explanatory power across the three measures |
 | Conditional comparison | Relative explanatory power across market regimes |
 
-The exact return construction, metric formulas, horizons, statistical models,
-regime definitions, and numerical tolerances remain TBD. They must be versioned
-before confirmatory results are produced.
+Return construction and risk formulas are versioned. Statistical models,
+confirmatory horizons, and ex-ante regime definitions remain to be frozen before
+confirmatory results are produced. The bull/bear labels in the four
+representative-position charts are explicitly ex-post descriptive strata and
+must not be reused as confirmatory historical features.
 
 ## EDA universe and risk-analysis cohort
 
@@ -80,11 +115,12 @@ operational proxy for JIT/MEV activity. The label is a reproducible event-timing
 classification, not proof of an actor's intent or that every observation is an
 attack.
 
-The primary full-period pool risk analysis excludes that same-block cohort and
-uses the 10,806 observations in `non_same_block_pairs.parquet`. The 10,723-row
-`strict_pairs.parquet` additionally removes exact-pair ambiguity and intervening
-same-range liquidity activity; use it as a quality-controlled sensitivity
-sample rather than silently substituting it for the primary risk cohort.
+The pool-level non-same-block cohort has 10,806 observations. The primary
+return-comparable risk build removes the same 11 overlapping fee identities as
+the realized-return outcome and therefore uses 10,795 observations. Within that
+common sample, 10,718 satisfy the strict pair rule; use them as a
+quality-controlled sensitivity sample rather than silently substituting them
+for the primary cohort.
 
 ## Future cross-pool validation
 
@@ -166,18 +202,14 @@ must be predeclared. Historical regimes must not use future information.
 Exploratory specifications must remain labeled and separate from confirmatory
 results.
 
-## Proposed code layout
-
-The implementation may use the following structure after the language and
-toolchain are selected. These paths are not created in this documentation pass.
+## Code layout
 
 ```text
 analysis/
-├── config/     # Versioned study, measure, regime, and model configurations
-├── src/        # Reusable reconstruction, metric, model, and export modules
+├── scripts/    # Frozen external-rate preparation and risk build entry points
+├── src/lp_risk/ # Reusable formulas, validated readers, and output pipeline
 ├── notebooks/  # Exploration and presentation, not core metric logic
-├── tests/      # Unit, reconciliation, regression, and integration tests
-└── outputs/    # Versioned tables, figures, diagnostics, and run manifests
+└── tests/      # Formula, sign, range, ordering, and accounting tests
 ```
 
 Core transformations and measure definitions should live in reusable modules,
@@ -202,15 +234,13 @@ and a recorded configuration.
 
 ## Output contract
 
-Each analysis run should eventually record:
+The risk-measure run manifest records:
 
 - input dataset identifiers and integrity values;
-- study, measure, regime, and model configuration versions;
-- repository revision and execution environment;
-- start and completion time in UTC;
-- sample exclusions, validation results, and model diagnostics;
-- generated table and figure paths; and
-- warnings, sensitivity results, and failed checks.
+- formula version and repository revision;
+- exact primary and strict sample counts;
+- dataset, return, Binance-oracle, and SOFR hashes;
+- valuation, risk-free, fee/gas, and daily aggregation conventions; and
+- generated Parquet paths, row counts, sizes, and SHA-256 values.
 
-No empirical result is claimed by this document. It defines the work needed to
-produce reviewable evidence.
+Model diagnostics and confirmatory empirical results remain future stages.

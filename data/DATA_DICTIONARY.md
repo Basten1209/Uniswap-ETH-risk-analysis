@@ -119,3 +119,45 @@ price이며 온체인 Oracle로 해석하지 않는다.
 출력은 최초 source timestamp부터 snapshot의 마지막 timestamp까지 정확히 1초 간격이며
 null과 중복 timestamp를 허용하지 않는다. 보간 여부는 데이터 컬럼을 늘리지 않고
 manifest의 월별 `imputed_rows`와 `gaps`에 기록한다.
+
+## SOFR snapshot
+
+`external/rates/sofr_daily/sofr_daily.parquet`은 FRED SOFR effective-date 관측치를
+분석기간의 UTC calendar day로 forward-fill한 고정 snapshot이다. `date`와 percent p.a.
+단위의 `sofr_percent`만 저장하며, 같은 디렉터리의 `manifest.json`이 source, retrieval
+time, coverage, row count, bytes와 SHA-256을 기록한다. PL에서는 일별
+`1 + r/360`을 기준으로 partial day를 복리 보간하며 USD risk-free rate를 USDT의 proxy로
+사용한다.
+
+## Risk-measure outputs (`derived/risk_metrics/v1/`)
+
+`position_lifetime_metrics.parquet`은 return dataset의 10,795개 operation을 그대로
+보존하면서 다음 컬럼을 추가한다.
+
+| 컬럼군 | 의미 |
+| --- | --- |
+| `pool_price_{entry,exit}_usdt` | event order 직전 exact `sqrt_price_x96` 상태 |
+| `theoretical_{entry,exit}_{weth,usdt}` | range와 liquidity로 복원한 fee-exclusive inventory |
+| `*_inventory_reconciliation_usdt` | 이론 inventory와 실제 Mint/Burn amount의 평가액 차이 |
+| `il_signed_vs_hodl` | `(principal - HODL) / HODL`; 논문 표준 부호 |
+| `il_loss_usdt`, `il_loss_on_initial` | `HODL - principal`; loss-positive dollar 및 initial-capital 비율 |
+| `lvr_rebalancing_*` | 각 Swap inventory 변화를 strict-prior Binance 가격에서 거래한 self-financing gap; 실증값은 clipping하지 않음 |
+| `lvr_qv_{1s,5s,1m}_*` | CEX 가격경로와 CEX in-range 판정의 non-negative QV sensitivity |
+| `pl_core_convexity_*` | exact internal-price concavity gap의 합 |
+| `pl_opportunity_cost_*` | 이미 발생한 PL gap에 SOFR를 적용한 추가분 |
+| `pl_loss_*`, `pl_signed_*` | loss-positive `core + opportunity` 및 논문 부호의 음수 PL |
+| `expected_pl_r0_30d_*` | 진입 전 30일 일별 변동성을 사용하는 기대식 robustness; primary realized PL이 아님 |
+
+`capital_weighted_position_daily.parquet`은 각 UTC 날짜와 half-open lifetime이 겹치는
+position을 `min(exit, day-end)`에서 평가한다. `*_usdt`는 해당 날짜 dollar numerator,
+`capital_weighted_*_pct`는 `100 * numerator / sum(initial capital)`이다. 이것은 표본
+구성이 변하는 사후 position-day 대표값이지 investable portfolio가 아니다.
+
+`representative_positions.parquet`은 보유기간 ETH return 상·하위 25%와 전체 lifetime
+하·상위 25%의 네 교집합에서 robust medoid로 선택한 operation과 선정 threshold를
+기록한다. `representative_position_paths.parquet`은 1일 이하 position의 1초 grid,
+장기 position의 1분 grid, 모든 Swap과 entry/exit를 합친 시계열이다. `row_kind`, exact
+event order, 외부·내부가격, inventory, LP/HODL value, IL/LVR/PL 누적값을 포함한다.
+
+`run_manifest.json`은 공식 버전, repository revision, 모든 input hash, 표본 수,
+계산 convention, 대표 operation ID와 output별 row/bytes/hash를 기록한다.

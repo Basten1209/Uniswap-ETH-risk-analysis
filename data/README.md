@@ -240,6 +240,8 @@ python data/scripts/dataset.py build
 | `derived/operation_pairs/non_same_block_pairs.parquet` | pool 전 기간 risk 분석의 기본 표본 |
 | `derived/operation_pairs/strict_pairs.parquet` | ambiguity와 중간 same-range operation까지 제거한 민감도 표본 |
 | `derived/returns/non_same_block_pair_returns.parquet` | non-same-block pair의 observed realized fee와 fee-inclusive return |
+| `external/rates/sofr_daily/` | Predictable Loss용 동결 SOFR calendar-day snapshot과 manifest |
+| `derived/risk_metrics/v1/` | position lifetime, capital-weighted daily, 대표 position 경로와 run manifest |
 
 operation-pair 자료는 다음 명령으로 재생성한다.
 
@@ -298,6 +300,24 @@ python data/scripts/prepare_binance_oracle.py \
 `quote_volume`이다. 원본에 없는 초는 미래 값을 사용하지 않고 직전 price로 채우며
 volume은 0으로 둔다. 전체 보간 구간과 파일별 checksum은 Oracle dataset의
 `manifest.json`에 기록된다.
+
+SOFR는 분석 노트북에서 실시간으로 받지 않는다. 다음 명령을 한 번 실행해 effective-date
+관측치를 calendar day로 forward-fill하고 hash가 있는 snapshot으로 고정한다.
+
+```bash
+python analysis/scripts/prepare_sofr.py
+```
+
+10,795개 return-comparable multi-block pair의 IL, external-price LVR, CEX QV
+sensitivity, Predictable Loss와 차트 원자료는 다음 명령으로 재생성한다.
+
+```bash
+python analysis/scripts/build_risk_metrics.py
+```
+
+이 빌드는 fee와 gas를 세 위험지표에서 제외하고, event보다 정확히 1초 이전 Binance
+가격과 exact pool `sqrt_price_x96`/blockchain log order를 사용한다. SOFR는 전체 WETH
+inventory가 아니라 이미 누적된 PL replication gap에만 적용한다.
 
 기존 결과를 전체 SHA-256까지 다시 검사하려면 다음 명령을 사용한다.
 
