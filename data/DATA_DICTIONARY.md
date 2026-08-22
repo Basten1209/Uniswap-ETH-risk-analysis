@@ -143,9 +143,9 @@ time, coverage, row count, bytes와 SHA-256을 기록한다. PL에서는 일별
 | `il_loss_usdt`, `il_loss_on_initial` | `HODL - principal`; loss-positive dollar 및 initial-capital 비율 |
 | `lvr_rebalancing_*` | 각 Swap inventory 변화를 strict-prior Binance 가격에서 거래한 self-financing gap; 실증값은 clipping하지 않음 |
 | `lvr_qv_{1s,5s,1m}_*` | CEX 가격경로와 CEX in-range 판정의 non-negative QV sensitivity |
-| `pl_core_convexity_*` | exact internal-price concavity gap의 합 |
-| `pl_opportunity_cost_*` | 이미 발생한 PL gap에 SOFR를 적용한 추가분 |
-| `pl_loss_*`, `pl_signed_*` | loss-positive `core + opportunity` 및 논문 부호의 음수 PL |
+| `pl_convexity_cost_*` | 논문 용어 Convexity Cost: exact internal-price convexity gap의 합 |
+| `pl_opportunity_cost_*` | 이미 발생한 PL gap에 SOFR를 적용한 Opportunity Cost |
+| `pl_loss_*`, `pl_signed_*` | loss-positive `Convexity Cost + Opportunity Cost` 및 논문 부호의 음수 PL |
 | `expected_pl_r0_30d_*` | 진입 전 30일 일별 변동성을 사용하는 기대식 robustness; primary realized PL이 아님 |
 
 `capital_weighted_position_daily.parquet`은 각 UTC 날짜와 half-open lifetime이 겹치는

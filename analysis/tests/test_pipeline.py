@@ -102,7 +102,7 @@ class PipelineTest(unittest.TestCase):
         row = positions.iloc[0]
         self.assertAlmostEqual(row["il_loss_usdt"], 0.0)
         self.assertAlmostEqual(row["lvr_rebalancing_usdt"], 0.0)
-        self.assertAlmostEqual(row["pl_core_convexity_usdt"], 0.0)
+        self.assertAlmostEqual(row["pl_convexity_cost_usdt"], 0.0)
         self.assertAlmostEqual(row["pl_opportunity_cost_usdt"], 0.0)
         self.assertAlmostEqual(row["pl_loss_usdt"], 0.0)
         self.assertAlmostEqual(daily.iloc[0]["capital_weighted_pl_loss_pct"], 0.0)

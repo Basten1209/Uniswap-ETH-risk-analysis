@@ -16,7 +16,7 @@ import pyarrow.parquet as pq
 
 from .formulas import (
     SofrCurve,
-    concavity_gap,
+    convexity_cost,
     human_liquidity,
     inventory_from_price,
     lvr_step,
@@ -64,10 +64,10 @@ class PositionSteps:
     pool_prices: np.ndarray
     timestamps_ns: np.ndarray
     lvr_steps: np.ndarray
-    pl_core_steps: np.ndarray
+    pl_convexity_cost_steps: np.ndarray
     lvr_prefix: np.ndarray
-    core_prefix: np.ndarray
-    discounted_core_prefix: np.ndarray
+    convexity_cost_prefix: np.ndarray
+    discounted_convexity_cost_prefix: np.ndarray
 
 
 def _numeric_pairs(
@@ -180,17 +180,19 @@ def _position_steps(
                 liquidity,
             )
         )
-        core_steps = np.asarray(
-            concavity_gap(previous, pool_prices, lower, upper, liquidity)
+        convexity_cost_steps = np.asarray(
+            convexity_cost(previous, pool_prices, lower, upper, liquidity)
         )
         lvr_prefix = np.cumsum(lvr_steps)
-        core_prefix = np.cumsum(core_steps)
+        convexity_cost_prefix = np.cumsum(convexity_cost_steps)
         discounted_prefix = np.cumsum(
-            core_steps * swap_discount_factors[start:end]
+            convexity_cost_steps * swap_discount_factors[start:end]
         )
     else:
-        lvr_steps = core_steps = np.empty(0, dtype=np.float64)
-        lvr_prefix = core_prefix = discounted_prefix = np.empty(0, dtype=np.float64)
+        lvr_steps = convexity_cost_steps = np.empty(0, dtype=np.float64)
+        lvr_prefix = convexity_cost_prefix = discounted_prefix = np.empty(
+            0, dtype=np.float64
+        )
     return PositionSteps(
         start=start,
         end=end,
@@ -198,10 +200,10 @@ def _position_steps(
         pool_prices=pool_prices,
         timestamps_ns=timestamps_ns,
         lvr_steps=lvr_steps,
-        pl_core_steps=core_steps,
+        pl_convexity_cost_steps=convexity_cost_steps,
         lvr_prefix=lvr_prefix,
-        core_prefix=core_prefix,
-        discounted_core_prefix=discounted_prefix,
+        convexity_cost_prefix=convexity_cost_prefix,
+        discounted_convexity_cost_prefix=discounted_prefix,
     )
 
 
@@ -256,7 +258,7 @@ def calculate_lifetime_and_daily(
     day_lp_value = np.empty(day_count, dtype=np.float64)
     day_hodl_value = np.empty(day_count, dtype=np.float64)
     day_lvr = np.empty(day_count, dtype=np.float64)
-    day_core = np.empty(day_count, dtype=np.float64)
+    day_convexity_cost = np.empty(day_count, dtype=np.float64)
     day_pl = np.empty(day_count, dtype=np.float64)
     swap_discount_factors = np.exp(-sofr.accumulated_log_ns(swaps.timestamps_ns))
 
@@ -276,7 +278,7 @@ def calculate_lifetime_and_daily(
             "il_loss_on_initial",
             "lvr_rebalancing_usdt",
             "lvr_rebalancing_on_initial",
-            "pl_core_convexity_usdt",
+            "pl_convexity_cost_usdt",
             "pl_opportunity_cost_usdt",
             "pl_loss_usdt",
             "pl_signed_usdt",
@@ -331,21 +333,28 @@ def calculate_lifetime_and_daily(
         lifetime_columns["il_loss_usdt"][index] = il_loss
         lifetime_columns["il_loss_on_initial"][index] = il_loss / initial[index]
         lvr_total = float(steps.lvr_prefix[-1]) if len(steps.lvr_prefix) else 0.0
-        core_total = float(steps.core_prefix[-1]) if len(steps.core_prefix) else 0.0
-        if len(steps.discounted_core_prefix):
+        convexity_cost_total = (
+            float(steps.convexity_cost_prefix[-1])
+            if len(steps.convexity_cost_prefix)
+            else 0.0
+        )
+        if len(steps.discounted_convexity_cost_prefix):
             exit_accumulated = float(sofr.accumulated_log(row["exit_timestamp"]))
             pl_total = float(
-                np.exp(exit_accumulated) * steps.discounted_core_prefix[-1]
+                np.exp(exit_accumulated)
+                * steps.discounted_convexity_cost_prefix[-1]
             )
         else:
             pl_total = 0.0
-        opportunity = pl_total - core_total
-        if opportunity < 0 and abs(opportunity) <= 1e-10 * max(core_total, 1.0):
+        opportunity = pl_total - convexity_cost_total
+        if opportunity < 0 and abs(opportunity) <= 1e-10 * max(
+            convexity_cost_total, 1.0
+        ):
             opportunity = 0.0
-            pl_total = core_total
+            pl_total = convexity_cost_total
         lifetime_columns["lvr_rebalancing_usdt"][index] = lvr_total
         lifetime_columns["lvr_rebalancing_on_initial"][index] = lvr_total / initial[index]
-        lifetime_columns["pl_core_convexity_usdt"][index] = core_total
+        lifetime_columns["pl_convexity_cost_usdt"][index] = convexity_cost_total
         lifetime_columns["pl_opportunity_cost_usdt"][index] = opportunity
         lifetime_columns["pl_loss_usdt"][index] = pl_total
         lifetime_columns["pl_signed_usdt"][index] = -pl_total
@@ -372,13 +381,15 @@ def calculate_lifetime_and_daily(
         )
         hodl_value = deposit_weth[index] * external + deposit_usdt[index]
         lvr_values = _prefix_value(steps.lvr_prefix, counts)
-        core_values = _prefix_value(steps.core_prefix, counts)
-        discounted = _prefix_value(steps.discounted_core_prefix, counts)
+        convexity_cost_values = _prefix_value(steps.convexity_cost_prefix, counts)
+        discounted = _prefix_value(
+            steps.discounted_convexity_cost_prefix, counts
+        )
         pl_values = np.exp(np.asarray(sofr.accumulated_log(snapshots))) * discounted
         day_lp_value[day_slice] = lp_value
         day_hodl_value[day_slice] = hodl_value
         day_lvr[day_slice] = lvr_values
-        day_core[day_slice] = core_values
+        day_convexity_cost[day_slice] = convexity_cost_values
         day_pl[day_slice] = pl_values
         if index == 0 or (index + 1) % 1_000 == 0 or index + 1 == len(positions):
             print(f"calculated lifetime/daily metrics {index + 1:05d}/{len(positions)}")
@@ -388,8 +399,8 @@ def calculate_lifetime_and_daily(
     positions["pl_signed_on_initial"] = (
         positions["pl_signed_usdt"] / positions["_initial_wealth_usdt"]
     )
-    positions["pl_core_convexity_on_initial"] = (
-        positions["pl_core_convexity_usdt"] / positions["_initial_wealth_usdt"]
+    positions["pl_convexity_cost_on_initial"] = (
+        positions["pl_convexity_cost_usdt"] / positions["_initial_wealth_usdt"]
     )
     positions["pl_opportunity_cost_on_initial"] = (
         positions["pl_opportunity_cost_usdt"] / positions["_initial_wealth_usdt"]
@@ -399,9 +410,9 @@ def calculate_lifetime_and_daily(
     ]
     day_rows["il_loss_usdt"] = day_hodl_value - day_lp_value
     day_rows["lvr_rebalancing_usdt"] = day_lvr
-    day_rows["pl_core_convexity_usdt"] = day_core
+    day_rows["pl_convexity_cost_usdt"] = day_convexity_cost
     day_rows["pl_loss_usdt"] = day_pl
-    day_rows["pl_opportunity_cost_usdt"] = day_pl - day_core
+    day_rows["pl_opportunity_cost_usdt"] = day_pl - day_convexity_cost
     aggregate = (
         day_rows.groupby("date", sort=True)
         .agg(
@@ -409,7 +420,7 @@ def calculate_lifetime_and_daily(
             initial_capital_usdt=("initial_capital_usdt", "sum"),
             il_loss_usdt=("il_loss_usdt", "sum"),
             lvr_rebalancing_usdt=("lvr_rebalancing_usdt", "sum"),
-            pl_core_convexity_usdt=("pl_core_convexity_usdt", "sum"),
+            pl_convexity_cost_usdt=("pl_convexity_cost_usdt", "sum"),
             pl_opportunity_cost_usdt=("pl_opportunity_cost_usdt", "sum"),
             pl_loss_usdt=("pl_loss_usdt", "sum"),
         )
@@ -418,7 +429,10 @@ def calculate_lifetime_and_daily(
     for source, target in (
         ("il_loss_usdt", "capital_weighted_il_loss_pct"),
         ("lvr_rebalancing_usdt", "capital_weighted_lvr_loss_pct"),
-        ("pl_core_convexity_usdt", "capital_weighted_pl_core_loss_pct"),
+        (
+            "pl_convexity_cost_usdt",
+            "capital_weighted_pl_convexity_cost_pct",
+        ),
         ("pl_opportunity_cost_usdt", "capital_weighted_pl_opportunity_cost_pct"),
         ("pl_loss_usdt", "capital_weighted_pl_loss_pct"),
     ):
@@ -739,8 +753,10 @@ def build_representative_paths(
         lp_value[exit_mask] = principal_weth * external[exit_mask] + principal_usdt
         hodl = deposit_weth * external + deposit_usdt
         lvr = _prefix_value(steps.lvr_prefix, counts)
-        core = _prefix_value(steps.core_prefix, counts)
-        discounted = _prefix_value(steps.discounted_core_prefix, counts)
+        convexity_cost_value = _prefix_value(steps.convexity_cost_prefix, counts)
+        discounted = _prefix_value(
+            steps.discounted_convexity_cost_prefix, counts
+        )
         pl = np.exp(
             np.asarray(sofr.accumulated_log(pd.DatetimeIndex(path["timestamp"])))
         ) * discounted
@@ -760,8 +776,8 @@ def build_representative_paths(
         path["il_loss_on_initial"] = (hodl - lp_value) / initial
         path["lvr_rebalancing_usdt"] = lvr
         path["lvr_rebalancing_on_initial"] = lvr / initial
-        path["pl_core_convexity_usdt"] = core
-        path["pl_opportunity_cost_usdt"] = pl - core
+        path["pl_convexity_cost_usdt"] = convexity_cost_value
+        path["pl_opportunity_cost_usdt"] = pl - convexity_cost_value
         path["pl_loss_usdt"] = pl
         path["pl_loss_on_initial"] = pl / initial
         paths.append(path)
@@ -793,20 +809,20 @@ def validate_risk_outputs(
         "lvr_qv_1s_on_initial",
         "lvr_qv_5s_on_initial",
         "lvr_qv_1m_on_initial",
-        "pl_core_convexity_on_initial",
+        "pl_convexity_cost_on_initial",
         "pl_opportunity_cost_on_initial",
         "pl_loss_on_initial",
     ]
     if not np.isfinite(positions[finite_columns].to_numpy(np.float64)).all():
         raise RuntimeError("primary risk outputs contain non-finite values")
-    if (positions["pl_core_convexity_usdt"] < 0).any() or any(
+    if (positions["pl_convexity_cost_usdt"] < 0).any() or any(
         (positions[column] < 0).any()
         for column in ("lvr_qv_1s_usdt", "lvr_qv_5s_usdt", "lvr_qv_1m_usdt")
     ):
         raise RuntimeError("non-negative theoretical components became negative")
     if not np.allclose(
         positions["pl_loss_usdt"],
-        positions["pl_core_convexity_usdt"]
+        positions["pl_convexity_cost_usdt"]
         + positions["pl_opportunity_cost_usdt"],
         rtol=1e-12,
         atol=1e-10,
@@ -844,7 +860,10 @@ def validate_risk_outputs(
     for source, target in (
         ("il_loss_usdt", "capital_weighted_il_loss_pct"),
         ("lvr_rebalancing_usdt", "capital_weighted_lvr_loss_pct"),
-        ("pl_core_convexity_usdt", "capital_weighted_pl_core_loss_pct"),
+        (
+            "pl_convexity_cost_usdt",
+            "capital_weighted_pl_convexity_cost_pct",
+        ),
         ("pl_opportunity_cost_usdt", "capital_weighted_pl_opportunity_cost_pct"),
         ("pl_loss_usdt", "capital_weighted_pl_loss_pct"),
     ):

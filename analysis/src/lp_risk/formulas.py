@@ -118,7 +118,7 @@ def lvr_step(
     return float(result) if result.ndim == 0 else result
 
 
-def concavity_gap(
+def convexity_cost(
     previous_pool_price: Any,
     pool_price: Any,
     lower_price: float,
@@ -174,7 +174,7 @@ def concavity_gap(
     materially_negative = result < -(relative_tolerance * scale)
     if np.any(materially_negative):
         minimum = float(np.min(result[materially_negative]))
-        raise ArithmeticError(f"Predictable-Loss concavity gap is negative: {minimum}")
+        raise ArithmeticError(f"Predictable-Loss convexity cost is negative: {minimum}")
     result = np.where(result < 0, 0.0, result)
     return float(result) if result.ndim == 0 else result
 

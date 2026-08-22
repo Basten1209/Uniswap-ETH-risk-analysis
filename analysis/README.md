@@ -59,10 +59,11 @@ frozen SOFR snapshot. Fees and gas do not enter IL, LVR, or PL.
 IL compares fee-exclusive principal with the actual deposited-asset HODL
 benchmark. Primary LVR is the external-price self-financing rebalancing gap;
 CEX quadratic-variation estimates at 1 second, 5 seconds, and 1 minute are
-robustness outputs. Predictable Loss is the exact discrete concavity cost on the
-internal pool-price path, with SOFR accrued only on an already accumulated
-replication gap. The old full-WETH-inventory SOFR charge is not PL and is no
-longer produced.
+robustness outputs. Predictable Loss is decomposed using the paper's terminology
+as **Convexity Cost + Opportunity Cost**. Convexity Cost is calculated from the
+exact discrete gap on the internal pool-price path; Opportunity Cost accrues
+SOFR only on an already accumulated replication gap. The old
+full-WETH-inventory SOFR charge is not PL and is no longer produced.
 
 Prepare the versioned SOFR input once, then build or execute the notebook without
 network access:

@@ -66,6 +66,8 @@ pooled in the primary analysis.
 PL means **predictable loss**, not profit and loss. Its implemented operational
 definition follows the relevant literature, including
 [Cartea, Drissi, and Monga](https://doi.org/10.1080/1350486X.2023.2277957).
+PL is decomposed using the paper's terminology as **Convexity Cost + Opportunity
+Cost**.
 The versioned risk build keeps native signs and common loss-positive,
 initial-capital-normalized values. Fee income remains an input to realized LP
 return, not a fourth risk measure.
