@@ -107,6 +107,97 @@ class PipelineTest(unittest.TestCase):
         self.assertAlmostEqual(row["pl_loss_usdt"], 0.0)
         self.assertAlmostEqual(daily.iloc[0]["capital_weighted_pl_loss_pct"], 0.0)
 
+    def test_block_end_pl_does_not_count_an_intra_block_round_trip(self) -> None:
+        swap_time = pd.Timestamp("2024-01-01T00:00:01Z").value
+        swaps = SwapPath(
+            keys=np.asarray(
+                encode_event_order(
+                    np.array([11, 11]),
+                    np.array([1, 2]),
+                    np.array([1, 1]),
+                ),
+                dtype=np.int64,
+            ),
+            timestamps_ns=np.array([swap_time, swap_time], dtype=np.int64),
+            block_numbers=np.array([11, 11]),
+            transaction_indices=np.array([1, 2]),
+            log_indices=np.array([1, 1]),
+            pool_prices=np.array([150.0, 200.0]),
+            external_prices=np.array([200.0, 200.0]),
+            initialize_key=encode_event_order(1, 0, 0),
+            initialize_price=200.0,
+        )
+        curve = SofrCurve.from_frame(
+            pd.DataFrame(
+                {
+                    "date": pd.date_range("2023-12-31", periods=3, tz="UTC"),
+                    "sofr_percent": [5.0, 5.0, 5.0],
+                }
+            )
+        )
+        positions, daily = calculate_lifetime_and_daily(
+            constant_pair(),
+            swaps,
+            ConstantOracle(),
+            curve,
+            enforce_frozen_sample=False,
+        )
+        row = positions.iloc[0]
+        self.assertAlmostEqual(row["il_loss_usdt"], 0.0)
+        self.assertAlmostEqual(row["lvr_rebalancing_usdt"], 0.0)
+        self.assertAlmostEqual(row["pl_convexity_cost_usdt"], 0.0)
+        self.assertAlmostEqual(row["pl_opportunity_cost_usdt"], 0.0)
+        self.assertAlmostEqual(row["pl_loss_usdt"], 0.0)
+        self.assertGreater(row["pl_swap_event_convexity_cost_usdt"], 0.0)
+        self.assertGreater(row["pl_swap_event_loss_usdt"], 0.0)
+        self.assertGreater(
+            daily.iloc[0]["capital_weighted_pl_swap_event_loss_pct"], 0.0
+        )
+
+    def test_block_end_pl_counts_a_round_trip_across_distinct_blocks(self) -> None:
+        shared_timestamp = pd.Timestamp("2024-01-01T00:00:01Z").value
+        swaps = SwapPath(
+            keys=np.asarray(
+                encode_event_order(
+                    np.array([11, 12]),
+                    np.array([1, 0]),
+                    np.array([1, 1]),
+                ),
+                dtype=np.int64,
+            ),
+            timestamps_ns=np.array(
+                [shared_timestamp, shared_timestamp], dtype=np.int64
+            ),
+            block_numbers=np.array([11, 12]),
+            transaction_indices=np.array([1, 0]),
+            log_indices=np.array([1, 1]),
+            pool_prices=np.array([150.0, 200.0]),
+            external_prices=np.array([200.0, 200.0]),
+            initialize_key=encode_event_order(1, 0, 0),
+            initialize_price=200.0,
+        )
+        curve = SofrCurve.from_frame(
+            pd.DataFrame(
+                {
+                    "date": pd.date_range("2023-12-31", periods=3, tz="UTC"),
+                    "sofr_percent": [5.0, 5.0, 5.0],
+                }
+            )
+        )
+        positions, _ = calculate_lifetime_and_daily(
+            constant_pair(),
+            swaps,
+            ConstantOracle(),
+            curve,
+            enforce_frozen_sample=False,
+        )
+        row = positions.iloc[0]
+        self.assertGreater(row["pl_convexity_cost_usdt"], 0.0)
+        self.assertAlmostEqual(
+            row["pl_convexity_cost_usdt"],
+            row["pl_swap_event_convexity_cost_usdt"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

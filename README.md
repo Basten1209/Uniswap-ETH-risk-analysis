@@ -67,7 +67,9 @@ PL means **predictable loss**, not profit and loss. Its implemented operational
 definition follows the relevant literature, including
 [Cartea, Drissi, and Monga](https://doi.org/10.1080/1350486X.2023.2277957).
 PL is decomposed using the paper's terminology as **Convexity Cost + Opportunity
-Cost**.
+Cost**. Primary PL uses Ethereum block-end pool states; every-Swap PL is retained
+only as a mesh sensitivity. Exact discrete and continuous-time definitions are
+documented in [`analysis/RISK_METRICS.md`](analysis/RISK_METRICS.md).
 The versioned risk build keeps native signs and common loss-positive,
 initial-capital-normalized values. Fee income remains an input to realized LP
 return, not a fourth risk measure.

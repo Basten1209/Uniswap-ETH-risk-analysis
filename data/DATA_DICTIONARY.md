@@ -129,7 +129,7 @@ time, coverage, row count, bytes와 SHA-256을 기록한다. PL에서는 일별
 `1 + r/360`을 기준으로 partial day를 복리 보간하며 USD risk-free rate를 USDT의 proxy로
 사용한다.
 
-## Risk-measure outputs (`derived/risk_metrics/v1/`)
+## Risk-measure outputs (`derived/risk_metrics/v2/`)
 
 `position_lifetime_metrics.parquet`은 return dataset의 10,795개 operation을 그대로
 보존하면서 다음 컬럼을 추가한다.
@@ -143,9 +143,10 @@ time, coverage, row count, bytes와 SHA-256을 기록한다. PL에서는 일별
 | `il_loss_usdt`, `il_loss_on_initial` | `HODL - principal`; loss-positive dollar 및 initial-capital 비율 |
 | `lvr_rebalancing_*` | 각 Swap inventory 변화를 strict-prior Binance 가격에서 거래한 self-financing gap; 실증값은 clipping하지 않음 |
 | `lvr_qv_{1s,5s,1m}_*` | CEX 가격경로와 CEX in-range 판정의 non-negative QV sensitivity |
-| `pl_convexity_cost_*` | 논문 용어 Convexity Cost: exact internal-price convexity gap의 합 |
+| `pl_convexity_cost_*` | 주 PL의 Convexity Cost: 포지션 보유 중 각 Ethereum block의 마지막 Swap 상태를 잇는 exact internal-price gap의 합 |
 | `pl_opportunity_cost_*` | 이미 발생한 PL gap에 SOFR를 적용한 Opportunity Cost |
 | `pl_loss_*`, `pl_signed_*` | loss-positive `Convexity Cost + Opportunity Cost` 및 논문 부호의 음수 PL |
+| `pl_swap_event_convexity_cost_*`, `pl_swap_event_opportunity_cost_*`, `pl_swap_event_loss_*` | 모든 Swap 중간상태를 쓰는 이전 PL mesh; intra-block microstructure sensitivity이며 주 위험지표가 아님 |
 | `expected_pl_r0_30d_*` | 진입 전 30일 일별 변동성을 사용하는 기대식 robustness; primary realized PL이 아님 |
 
 `capital_weighted_position_daily.parquet`은 각 UTC 날짜와 half-open lifetime이 겹치는
@@ -158,6 +159,10 @@ position을 `min(exit, day-end)`에서 평가한다. `*_usdt`는 해당 날짜 d
 기록한다. `representative_position_paths.parquet`은 1일 이하 position의 1초 grid,
 장기 position의 1분 grid, 모든 Swap과 entry/exit를 합친 시계열이다. `row_kind`, exact
 event order, 외부·내부가격, inventory, LP/HODL value, IL/LVR/PL 누적값을 포함한다.
+주 PL은 block의 마지막 in-scope Swap에서만 Convexity Cost가 증가하며, 모든 Swap을
+사용한 sensitivity도 별도 `pl_swap_event_*` 컬럼으로 함께 보존한다.
+`is_pl_block_endpoint`는 해당 Swap이 주 PL mesh에 포함되는 block의 마지막
+in-scope Swap인지를 표시한다.
 
 `run_manifest.json`은 공식 버전, repository revision, 모든 input hash, 표본 수,
 계산 convention, 대표 operation ID와 output별 row/bytes/hash를 기록한다.

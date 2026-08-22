@@ -50,7 +50,7 @@ jupyter nbconvert --to notebook --execute --inplace analysis/notebooks/eda.ipynb
 ## Implemented IL/LVR/Predictable-Loss build
 
 [`../data_processing.ipynb`](../data_processing.ipynb) is a clean-kernel
-executable presentation of the versioned `il-lvr-pl-v1` build. The primary
+executable presentation of the versioned `il-lvr-pl-v2-block-end-pl` build. The primary
 sample is the 10,795-row return-comparable multi-block operation-pair dataset;
 the 10,718 strict pairs remain a sensitivity subset. The build uses exact
 `sqrt_price_x96` and blockchain event order, strict-prior Binance prices, and a
@@ -60,10 +60,17 @@ IL compares fee-exclusive principal with the actual deposited-asset HODL
 benchmark. Primary LVR is the external-price self-financing rebalancing gap;
 CEX quadratic-variation estimates at 1 second, 5 seconds, and 1 minute are
 robustness outputs. Predictable Loss is decomposed using the paper's terminology
-as **Convexity Cost + Opportunity Cost**. Convexity Cost is calculated from the
-exact discrete gap on the internal pool-price path; Opportunity Cost accrues
-SOFR only on an already accumulated replication gap. The old
+as **Convexity Cost + Opportunity Cost**. Primary Convexity Cost is calculated
+from the exact discrete gap between the last in-scope pool states of consecutive
+Ethereum blocks. The every-Swap path remains a named microstructure sensitivity
+instead of treating transient intra-block excursions as separately hedgeable
+market moves. Opportunity Cost accrues SOFR only on an already accumulated
+replication gap. The old
 full-WETH-inventory SOFR charge is not PL and is no longer produced.
+
+See [`RISK_METRICS.md`](RISK_METRICS.md) for the exact discrete definitions,
+continuous-time `dIL`, `dV_LP`, `dLVR`, and `dPL` dynamics, sign conventions,
+and the relationship between their path integrals.
 
 Prepare the versioned SOFR input once, then build or execute the notebook without
 network access:
@@ -76,7 +83,7 @@ jupyter nbconvert --to notebook --execute data_processing.ipynb \
 ```
 
 Outputs and their run manifest are written under
-`$UNISWAP_DATA_ROOT/derived/risk_metrics/v1/`; figures are saved in its
+`$UNISWAP_DATA_ROOT/derived/risk_metrics/v2/`; figures are saved in its
 `figures/` directory.
 
 ## Analytical objective

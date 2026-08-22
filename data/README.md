@@ -241,7 +241,7 @@ python data/scripts/dataset.py build
 | `derived/operation_pairs/strict_pairs.parquet` | ambiguity와 중간 same-range operation까지 제거한 민감도 표본 |
 | `derived/returns/non_same_block_pair_returns.parquet` | non-same-block pair의 observed realized fee와 fee-inclusive return |
 | `external/rates/sofr_daily/` | Predictable Loss용 동결 SOFR calendar-day snapshot과 manifest |
-| `derived/risk_metrics/v1/` | position lifetime, capital-weighted daily, 대표 position 경로와 run manifest |
+| `derived/risk_metrics/v2/` | block-end PL을 쓰는 position lifetime, capital-weighted daily, 대표 position 경로와 run manifest |
 
 operation-pair 자료는 다음 명령으로 재생성한다.
 
