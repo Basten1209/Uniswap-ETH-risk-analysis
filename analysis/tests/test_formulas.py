@@ -13,7 +13,7 @@ sys.path.insert(0, str(ANALYSIS_DIR / "src"))
 
 from lp_risk.formulas import (  # noqa: E402
     SofrCurve,
-    concavity_gap,
+    convexity_cost,
     inventory_from_price,
     lvr_step,
     sqrt_price_x96_to_price,
@@ -43,26 +43,26 @@ class FormulaTest(unittest.TestCase):
 
     def test_constant_price_has_zero_lvr_and_pl(self) -> None:
         self.assertEqual(lvr_step(200.0, 200.0, 200.0, 100.0, 400.0, 10.0), 0)
-        self.assertEqual(concavity_gap(200.0, 200.0, 100.0, 400.0, 10.0), 0)
+        self.assertEqual(convexity_cost(200.0, 200.0, 100.0, 400.0, 10.0), 0)
 
-    def test_inside_range_concavity_gap_matches_closed_form(self) -> None:
+    def test_inside_range_convexity_cost_matches_closed_form(self) -> None:
         p0, p1 = 196.0, 225.0
         expected = 10.0 * (np.sqrt(p1) - np.sqrt(p0)) ** 2 / np.sqrt(p0)
-        actual = concavity_gap(p0, p1, 100.0, 400.0, 10.0)
+        actual = convexity_cost(p0, p1, 100.0, 400.0, 10.0)
         self.assertAlmostEqual(actual, expected, places=14)
 
     def test_same_side_out_of_range_move_has_no_concavity_cost(self) -> None:
-        self.assertEqual(concavity_gap(25.0, 81.0, 100.0, 400.0, 10.0), 0)
-        self.assertEqual(concavity_gap(500.0, 900.0, 100.0, 400.0, 10.0), 0)
-        self.assertGreater(concavity_gap(81.0, 121.0, 100.0, 400.0, 10.0), 0)
+        self.assertEqual(convexity_cost(25.0, 81.0, 100.0, 400.0, 10.0), 0)
+        self.assertEqual(convexity_cost(500.0, 900.0, 100.0, 400.0, 10.0), 0)
+        self.assertGreater(convexity_cost(81.0, 121.0, 100.0, 400.0, 10.0), 0)
 
     def test_round_trip_can_restore_value_but_accumulates_pl(self) -> None:
         initial = value_at_internal_price(200.0, 100.0, 400.0, 10.0)
         terminal = value_at_internal_price(200.0, 100.0, 400.0, 10.0)
-        total_gap = concavity_gap(200.0, 250.0, 100.0, 400.0, 10.0)
-        total_gap += concavity_gap(250.0, 200.0, 100.0, 400.0, 10.0)
+        total_cost = convexity_cost(200.0, 250.0, 100.0, 400.0, 10.0)
+        total_cost += convexity_cost(250.0, 200.0, 100.0, 400.0, 10.0)
         self.assertEqual(initial, terminal)
-        self.assertGreater(total_gap, 0)
+        self.assertGreater(total_cost, 0)
 
     def test_sofr_compounds_only_an_existing_gap(self) -> None:
         frame = pd.DataFrame(

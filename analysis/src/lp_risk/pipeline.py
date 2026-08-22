@@ -16,7 +16,7 @@ import pyarrow.parquet as pq
 
 from .formulas import (
     SofrCurve,
-    concavity_gap,
+    convexity_cost,
     human_liquidity,
     inventory_from_price,
     lvr_step,
@@ -35,7 +35,7 @@ from .io import (
 
 SECONDS_PER_DAY = 86_400
 QVAR_FREQUENCIES = {"1s": 1, "5s": 5, "1m": 60}
-FORMULA_VERSION = "il-lvr-pl-v1"
+FORMULA_VERSION = "il-lvr-pl-v2-block-end-pl"
 EXPECTED_POSITION_COUNT = 10_795
 EXPECTED_STRICT_COUNT = 10_718
 EXPECTED_REPRESENTATIVE_IDS = [
@@ -63,11 +63,15 @@ class PositionSteps:
     entry_pool_price: float
     pool_prices: np.ndarray
     timestamps_ns: np.ndarray
+    block_endpoint_mask: np.ndarray
     lvr_steps: np.ndarray
-    pl_core_steps: np.ndarray
+    pl_convexity_cost_steps: np.ndarray
+    pl_swap_event_convexity_cost_steps: np.ndarray
     lvr_prefix: np.ndarray
-    core_prefix: np.ndarray
-    discounted_core_prefix: np.ndarray
+    convexity_cost_prefix: np.ndarray
+    discounted_convexity_cost_prefix: np.ndarray
+    swap_event_convexity_cost_prefix: np.ndarray
+    swap_event_discounted_convexity_cost_prefix: np.ndarray
 
 
 def _numeric_pairs(
@@ -149,6 +153,12 @@ def _numeric_pairs(
 def _position_steps(
     row: pd.Series, swaps: SwapPath, swap_discount_factors: np.ndarray
 ) -> PositionSteps:
+    """Build aligned event prefixes with block-end PL as the primary mesh.
+
+    LVR and the named Swap-event PL sensitivity retain every Swap. Primary PL
+    assigns one Convexity Cost increment to the final in-scope Swap of each
+    block, so all prefixes remain aligned to blockchain event counts.
+    """
     entry_key = encode_event_order(
         row["entry_block_number"],
         row["entry_transaction_index"],
@@ -180,28 +190,66 @@ def _position_steps(
                 liquidity,
             )
         )
-        core_steps = np.asarray(
-            concavity_gap(previous, pool_prices, lower, upper, liquidity)
+        swap_event_convexity_cost_steps = np.asarray(
+            convexity_cost(previous, pool_prices, lower, upper, liquidity)
         )
+        position_blocks = swaps.block_numbers[start:end]
+        block_endpoint_mask = np.empty(len(pool_prices), dtype=bool)
+        block_endpoint_mask[:-1] = position_blocks[:-1] != position_blocks[1:]
+        block_endpoint_mask[-1] = True
+        block_endpoint_indices = np.flatnonzero(block_endpoint_mask)
+        block_endpoint_prices = pool_prices[block_endpoint_indices]
+        block_previous = np.empty_like(block_endpoint_prices)
+        block_previous[0] = entry_pool_price
+        block_previous[1:] = block_endpoint_prices[:-1]
+        block_convexity_cost = np.asarray(
+            convexity_cost(
+                block_previous,
+                block_endpoint_prices,
+                lower,
+                upper,
+                liquidity,
+            )
+        )
+        convexity_cost_steps = np.zeros(len(pool_prices), dtype=np.float64)
+        convexity_cost_steps[block_endpoint_indices] = block_convexity_cost
         lvr_prefix = np.cumsum(lvr_steps)
-        core_prefix = np.cumsum(core_steps)
+        convexity_cost_prefix = np.cumsum(convexity_cost_steps)
         discounted_prefix = np.cumsum(
-            core_steps * swap_discount_factors[start:end]
+            convexity_cost_steps * swap_discount_factors[start:end]
+        )
+        swap_event_convexity_cost_prefix = np.cumsum(
+            swap_event_convexity_cost_steps
+        )
+        swap_event_discounted_prefix = np.cumsum(
+            swap_event_convexity_cost_steps * swap_discount_factors[start:end]
         )
     else:
-        lvr_steps = core_steps = np.empty(0, dtype=np.float64)
-        lvr_prefix = core_prefix = discounted_prefix = np.empty(0, dtype=np.float64)
+        block_endpoint_mask = np.empty(0, dtype=bool)
+        lvr_steps = convexity_cost_steps = swap_event_convexity_cost_steps = (
+            np.empty(0, dtype=np.float64)
+        )
+        empty_prefix = np.empty(0, dtype=np.float64)
+        lvr_prefix = empty_prefix
+        convexity_cost_prefix = empty_prefix
+        discounted_prefix = empty_prefix
+        swap_event_convexity_cost_prefix = empty_prefix
+        swap_event_discounted_prefix = empty_prefix
     return PositionSteps(
         start=start,
         end=end,
         entry_pool_price=entry_pool_price,
         pool_prices=pool_prices,
         timestamps_ns=timestamps_ns,
+        block_endpoint_mask=block_endpoint_mask,
         lvr_steps=lvr_steps,
-        pl_core_steps=core_steps,
+        pl_convexity_cost_steps=convexity_cost_steps,
+        pl_swap_event_convexity_cost_steps=swap_event_convexity_cost_steps,
         lvr_prefix=lvr_prefix,
-        core_prefix=core_prefix,
-        discounted_core_prefix=discounted_prefix,
+        convexity_cost_prefix=convexity_cost_prefix,
+        discounted_convexity_cost_prefix=discounted_prefix,
+        swap_event_convexity_cost_prefix=swap_event_convexity_cost_prefix,
+        swap_event_discounted_convexity_cost_prefix=swap_event_discounted_prefix,
     )
 
 
@@ -256,8 +304,10 @@ def calculate_lifetime_and_daily(
     day_lp_value = np.empty(day_count, dtype=np.float64)
     day_hodl_value = np.empty(day_count, dtype=np.float64)
     day_lvr = np.empty(day_count, dtype=np.float64)
-    day_core = np.empty(day_count, dtype=np.float64)
+    day_convexity_cost = np.empty(day_count, dtype=np.float64)
     day_pl = np.empty(day_count, dtype=np.float64)
+    day_swap_event_convexity_cost = np.empty(day_count, dtype=np.float64)
+    day_swap_event_pl = np.empty(day_count, dtype=np.float64)
     swap_discount_factors = np.exp(-sofr.accumulated_log_ns(swaps.timestamps_ns))
 
     lifetime_columns = {
@@ -276,11 +326,15 @@ def calculate_lifetime_and_daily(
             "il_loss_on_initial",
             "lvr_rebalancing_usdt",
             "lvr_rebalancing_on_initial",
-            "pl_core_convexity_usdt",
+            "pl_convexity_cost_usdt",
             "pl_opportunity_cost_usdt",
             "pl_loss_usdt",
             "pl_signed_usdt",
             "pl_loss_on_initial",
+            "pl_swap_event_convexity_cost_usdt",
+            "pl_swap_event_opportunity_cost_usdt",
+            "pl_swap_event_loss_usdt",
+            "pl_swap_event_loss_on_initial",
         )
     }
     deposit_weth = positions["_entry_amount0_raw"].to_numpy(np.float64) / 1e18
@@ -331,25 +385,62 @@ def calculate_lifetime_and_daily(
         lifetime_columns["il_loss_usdt"][index] = il_loss
         lifetime_columns["il_loss_on_initial"][index] = il_loss / initial[index]
         lvr_total = float(steps.lvr_prefix[-1]) if len(steps.lvr_prefix) else 0.0
-        core_total = float(steps.core_prefix[-1]) if len(steps.core_prefix) else 0.0
-        if len(steps.discounted_core_prefix):
+        convexity_cost_total = (
+            float(steps.convexity_cost_prefix[-1])
+            if len(steps.convexity_cost_prefix)
+            else 0.0
+        )
+        if len(steps.discounted_convexity_cost_prefix):
             exit_accumulated = float(sofr.accumulated_log(row["exit_timestamp"]))
             pl_total = float(
-                np.exp(exit_accumulated) * steps.discounted_core_prefix[-1]
+                np.exp(exit_accumulated)
+                * steps.discounted_convexity_cost_prefix[-1]
             )
         else:
             pl_total = 0.0
-        opportunity = pl_total - core_total
-        if opportunity < 0 and abs(opportunity) <= 1e-10 * max(core_total, 1.0):
+        opportunity = pl_total - convexity_cost_total
+        if opportunity < 0 and abs(opportunity) <= 1e-10 * max(
+            convexity_cost_total, 1.0
+        ):
             opportunity = 0.0
-            pl_total = core_total
+            pl_total = convexity_cost_total
+        swap_event_convexity_cost_total = (
+            float(steps.swap_event_convexity_cost_prefix[-1])
+            if len(steps.swap_event_convexity_cost_prefix)
+            else 0.0
+        )
+        if len(steps.swap_event_discounted_convexity_cost_prefix):
+            swap_event_pl_total = float(
+                np.exp(exit_accumulated)
+                * steps.swap_event_discounted_convexity_cost_prefix[-1]
+            )
+        else:
+            swap_event_pl_total = 0.0
+        swap_event_opportunity = (
+            swap_event_pl_total - swap_event_convexity_cost_total
+        )
+        if swap_event_opportunity < 0 and abs(swap_event_opportunity) <= 1e-10 * max(
+            swap_event_convexity_cost_total, 1.0
+        ):
+            swap_event_opportunity = 0.0
+            swap_event_pl_total = swap_event_convexity_cost_total
         lifetime_columns["lvr_rebalancing_usdt"][index] = lvr_total
         lifetime_columns["lvr_rebalancing_on_initial"][index] = lvr_total / initial[index]
-        lifetime_columns["pl_core_convexity_usdt"][index] = core_total
+        lifetime_columns["pl_convexity_cost_usdt"][index] = convexity_cost_total
         lifetime_columns["pl_opportunity_cost_usdt"][index] = opportunity
         lifetime_columns["pl_loss_usdt"][index] = pl_total
         lifetime_columns["pl_signed_usdt"][index] = -pl_total
         lifetime_columns["pl_loss_on_initial"][index] = pl_total / initial[index]
+        lifetime_columns["pl_swap_event_convexity_cost_usdt"][index] = (
+            swap_event_convexity_cost_total
+        )
+        lifetime_columns["pl_swap_event_opportunity_cost_usdt"][index] = (
+            swap_event_opportunity
+        )
+        lifetime_columns["pl_swap_event_loss_usdt"][index] = swap_event_pl_total
+        lifetime_columns["pl_swap_event_loss_on_initial"][index] = (
+            swap_event_pl_total / initial[index]
+        )
 
         day_start = int(day_offsets[index])
         day_end = int(day_offsets[index + 1])
@@ -372,14 +463,29 @@ def calculate_lifetime_and_daily(
         )
         hodl_value = deposit_weth[index] * external + deposit_usdt[index]
         lvr_values = _prefix_value(steps.lvr_prefix, counts)
-        core_values = _prefix_value(steps.core_prefix, counts)
-        discounted = _prefix_value(steps.discounted_core_prefix, counts)
+        convexity_cost_values = _prefix_value(steps.convexity_cost_prefix, counts)
+        discounted = _prefix_value(
+            steps.discounted_convexity_cost_prefix, counts
+        )
         pl_values = np.exp(np.asarray(sofr.accumulated_log(snapshots))) * discounted
+        swap_event_convexity_cost_values = _prefix_value(
+            steps.swap_event_convexity_cost_prefix, counts
+        )
+        swap_event_discounted = _prefix_value(
+            steps.swap_event_discounted_convexity_cost_prefix, counts
+        )
+        swap_event_pl_values = np.exp(
+            np.asarray(sofr.accumulated_log(snapshots))
+        ) * swap_event_discounted
         day_lp_value[day_slice] = lp_value
         day_hodl_value[day_slice] = hodl_value
         day_lvr[day_slice] = lvr_values
-        day_core[day_slice] = core_values
+        day_convexity_cost[day_slice] = convexity_cost_values
         day_pl[day_slice] = pl_values
+        day_swap_event_convexity_cost[day_slice] = (
+            swap_event_convexity_cost_values
+        )
+        day_swap_event_pl[day_slice] = swap_event_pl_values
         if index == 0 or (index + 1) % 1_000 == 0 or index + 1 == len(positions):
             print(f"calculated lifetime/daily metrics {index + 1:05d}/{len(positions)}")
 
@@ -388,20 +494,35 @@ def calculate_lifetime_and_daily(
     positions["pl_signed_on_initial"] = (
         positions["pl_signed_usdt"] / positions["_initial_wealth_usdt"]
     )
-    positions["pl_core_convexity_on_initial"] = (
-        positions["pl_core_convexity_usdt"] / positions["_initial_wealth_usdt"]
+    positions["pl_convexity_cost_on_initial"] = (
+        positions["pl_convexity_cost_usdt"] / positions["_initial_wealth_usdt"]
     )
     positions["pl_opportunity_cost_on_initial"] = (
         positions["pl_opportunity_cost_usdt"] / positions["_initial_wealth_usdt"]
+    )
+    positions["pl_swap_event_convexity_cost_on_initial"] = (
+        positions["pl_swap_event_convexity_cost_usdt"]
+        / positions["_initial_wealth_usdt"]
+    )
+    positions["pl_swap_event_opportunity_cost_on_initial"] = (
+        positions["pl_swap_event_opportunity_cost_usdt"]
+        / positions["_initial_wealth_usdt"]
     )
     day_rows["initial_capital_usdt"] = initial[
         day_rows["position_index"].to_numpy(np.int64)
     ]
     day_rows["il_loss_usdt"] = day_hodl_value - day_lp_value
     day_rows["lvr_rebalancing_usdt"] = day_lvr
-    day_rows["pl_core_convexity_usdt"] = day_core
+    day_rows["pl_convexity_cost_usdt"] = day_convexity_cost
     day_rows["pl_loss_usdt"] = day_pl
-    day_rows["pl_opportunity_cost_usdt"] = day_pl - day_core
+    day_rows["pl_opportunity_cost_usdt"] = day_pl - day_convexity_cost
+    day_rows["pl_swap_event_convexity_cost_usdt"] = (
+        day_swap_event_convexity_cost
+    )
+    day_rows["pl_swap_event_loss_usdt"] = day_swap_event_pl
+    day_rows["pl_swap_event_opportunity_cost_usdt"] = (
+        day_swap_event_pl - day_swap_event_convexity_cost
+    )
     aggregate = (
         day_rows.groupby("date", sort=True)
         .agg(
@@ -409,18 +530,42 @@ def calculate_lifetime_and_daily(
             initial_capital_usdt=("initial_capital_usdt", "sum"),
             il_loss_usdt=("il_loss_usdt", "sum"),
             lvr_rebalancing_usdt=("lvr_rebalancing_usdt", "sum"),
-            pl_core_convexity_usdt=("pl_core_convexity_usdt", "sum"),
+            pl_convexity_cost_usdt=("pl_convexity_cost_usdt", "sum"),
             pl_opportunity_cost_usdt=("pl_opportunity_cost_usdt", "sum"),
             pl_loss_usdt=("pl_loss_usdt", "sum"),
+            pl_swap_event_convexity_cost_usdt=(
+                "pl_swap_event_convexity_cost_usdt",
+                "sum",
+            ),
+            pl_swap_event_opportunity_cost_usdt=(
+                "pl_swap_event_opportunity_cost_usdt",
+                "sum",
+            ),
+            pl_swap_event_loss_usdt=("pl_swap_event_loss_usdt", "sum"),
         )
         .reset_index()
     )
     for source, target in (
         ("il_loss_usdt", "capital_weighted_il_loss_pct"),
         ("lvr_rebalancing_usdt", "capital_weighted_lvr_loss_pct"),
-        ("pl_core_convexity_usdt", "capital_weighted_pl_core_loss_pct"),
+        (
+            "pl_convexity_cost_usdt",
+            "capital_weighted_pl_convexity_cost_pct",
+        ),
         ("pl_opportunity_cost_usdt", "capital_weighted_pl_opportunity_cost_pct"),
         ("pl_loss_usdt", "capital_weighted_pl_loss_pct"),
+        (
+            "pl_swap_event_convexity_cost_usdt",
+            "capital_weighted_pl_swap_event_convexity_cost_pct",
+        ),
+        (
+            "pl_swap_event_opportunity_cost_usdt",
+            "capital_weighted_pl_swap_event_opportunity_cost_pct",
+        ),
+        (
+            "pl_swap_event_loss_usdt",
+            "capital_weighted_pl_swap_event_loss_pct",
+        ),
     ):
         aggregate[target] = 100.0 * aggregate[source] / aggregate["initial_capital_usdt"]
     close_events = pd.DatetimeIndex(aggregate["date"]) + pd.Timedelta(days=1)
@@ -671,7 +816,12 @@ def build_representative_paths(
         frequency = "1s" if row["holding_seconds"] <= SECONDS_PER_DAY else "1min"
         grid = pd.date_range(entry.ceil(frequency), exit_time.floor(frequency), freq=frequency)
         grid_frame = pd.DataFrame(
-            {"timestamp": grid, "row_kind": "grid", "step_count": 0}
+            {
+                "timestamp": grid,
+                "row_kind": "grid",
+                "step_count": 0,
+                "is_pl_block_endpoint": False,
+            }
         )
         grid_frame["step_count"] = np.searchsorted(
             steps.timestamps_ns, grid.as_unit("ns").asi8, side="right"
@@ -684,6 +834,7 @@ def build_representative_paths(
                 "block_number": swaps.block_numbers[steps.start : steps.end],
                 "transaction_index": swaps.transaction_indices[steps.start : steps.end],
                 "log_index": swaps.log_indices[steps.start : steps.end],
+                "is_pl_block_endpoint": steps.block_endpoint_mask,
             }
         )
         endpoint_frame = pd.DataFrame(
@@ -691,6 +842,7 @@ def build_representative_paths(
                 "timestamp": [entry, exit_time],
                 "row_kind": ["entry", "exit"],
                 "step_count": [0, len(steps.timestamps_ns)],
+                "is_pl_block_endpoint": [False, False],
             }
         )
         path = pd.concat([endpoint_frame, grid_frame, swap_frame], ignore_index=True)
@@ -739,11 +891,22 @@ def build_representative_paths(
         lp_value[exit_mask] = principal_weth * external[exit_mask] + principal_usdt
         hodl = deposit_weth * external + deposit_usdt
         lvr = _prefix_value(steps.lvr_prefix, counts)
-        core = _prefix_value(steps.core_prefix, counts)
-        discounted = _prefix_value(steps.discounted_core_prefix, counts)
+        convexity_cost_value = _prefix_value(steps.convexity_cost_prefix, counts)
+        discounted = _prefix_value(
+            steps.discounted_convexity_cost_prefix, counts
+        )
         pl = np.exp(
             np.asarray(sofr.accumulated_log(pd.DatetimeIndex(path["timestamp"])))
         ) * discounted
+        swap_event_convexity_cost = _prefix_value(
+            steps.swap_event_convexity_cost_prefix, counts
+        )
+        swap_event_discounted = _prefix_value(
+            steps.swap_event_discounted_convexity_cost_prefix, counts
+        )
+        swap_event_pl = np.exp(
+            np.asarray(sofr.accumulated_log(pd.DatetimeIndex(path["timestamp"])))
+        ) * swap_event_discounted
         initial = float(row["_initial_wealth_usdt"])
         path["operation_id"] = representative.operation_id
         path["market_regime"] = representative.market_regime
@@ -760,10 +923,16 @@ def build_representative_paths(
         path["il_loss_on_initial"] = (hodl - lp_value) / initial
         path["lvr_rebalancing_usdt"] = lvr
         path["lvr_rebalancing_on_initial"] = lvr / initial
-        path["pl_core_convexity_usdt"] = core
-        path["pl_opportunity_cost_usdt"] = pl - core
+        path["pl_convexity_cost_usdt"] = convexity_cost_value
+        path["pl_opportunity_cost_usdt"] = pl - convexity_cost_value
         path["pl_loss_usdt"] = pl
         path["pl_loss_on_initial"] = pl / initial
+        path["pl_swap_event_convexity_cost_usdt"] = swap_event_convexity_cost
+        path["pl_swap_event_opportunity_cost_usdt"] = (
+            swap_event_pl - swap_event_convexity_cost
+        )
+        path["pl_swap_event_loss_usdt"] = swap_event_pl
+        path["pl_swap_event_loss_on_initial"] = swap_event_pl / initial
         paths.append(path)
     return pd.concat(paths, ignore_index=True)
 
@@ -793,20 +962,29 @@ def validate_risk_outputs(
         "lvr_qv_1s_on_initial",
         "lvr_qv_5s_on_initial",
         "lvr_qv_1m_on_initial",
-        "pl_core_convexity_on_initial",
+        "pl_convexity_cost_on_initial",
         "pl_opportunity_cost_on_initial",
         "pl_loss_on_initial",
+        "pl_swap_event_convexity_cost_on_initial",
+        "pl_swap_event_opportunity_cost_on_initial",
+        "pl_swap_event_loss_on_initial",
     ]
     if not np.isfinite(positions[finite_columns].to_numpy(np.float64)).all():
         raise RuntimeError("primary risk outputs contain non-finite values")
-    if (positions["pl_core_convexity_usdt"] < 0).any() or any(
+    if any(
+        (positions[column] < 0).any()
+        for column in (
+            "pl_convexity_cost_usdt",
+            "pl_swap_event_convexity_cost_usdt",
+        )
+    ) or any(
         (positions[column] < 0).any()
         for column in ("lvr_qv_1s_usdt", "lvr_qv_5s_usdt", "lvr_qv_1m_usdt")
     ):
         raise RuntimeError("non-negative theoretical components became negative")
     if not np.allclose(
         positions["pl_loss_usdt"],
-        positions["pl_core_convexity_usdt"]
+        positions["pl_convexity_cost_usdt"]
         + positions["pl_opportunity_cost_usdt"],
         rtol=1e-12,
         atol=1e-10,
@@ -814,6 +992,14 @@ def validate_risk_outputs(
         positions["pl_signed_usdt"], -positions["pl_loss_usdt"], rtol=0, atol=0
     ):
         raise RuntimeError("Predictable-Loss decomposition or sign identity failed")
+    if not np.allclose(
+        positions["pl_swap_event_loss_usdt"],
+        positions["pl_swap_event_convexity_cost_usdt"]
+        + positions["pl_swap_event_opportunity_cost_usdt"],
+        rtol=1e-12,
+        atol=1e-10,
+    ):
+        raise RuntimeError("Swap-event PL sensitivity decomposition failed")
     if representatives["operation_id"].tolist() != EXPECTED_REPRESENTATIVE_IDS:
         raise RuntimeError("deterministic representative-position selection changed")
     terminal = representative_paths.loc[
@@ -823,6 +1009,7 @@ def validate_risk_outputs(
             "il_loss_on_initial",
             "lvr_rebalancing_on_initial",
             "pl_loss_on_initial",
+            "pl_swap_event_loss_on_initial",
         ],
     ].set_index("operation_id")
     expected = positions.set_index("operation_id").loc[
@@ -831,6 +1018,7 @@ def validate_risk_outputs(
             "il_loss_on_initial",
             "lvr_rebalancing_on_initial",
             "pl_loss_on_initial",
+            "pl_swap_event_loss_on_initial",
         ],
     ]
     if not np.allclose(
@@ -844,9 +1032,24 @@ def validate_risk_outputs(
     for source, target in (
         ("il_loss_usdt", "capital_weighted_il_loss_pct"),
         ("lvr_rebalancing_usdt", "capital_weighted_lvr_loss_pct"),
-        ("pl_core_convexity_usdt", "capital_weighted_pl_core_loss_pct"),
+        (
+            "pl_convexity_cost_usdt",
+            "capital_weighted_pl_convexity_cost_pct",
+        ),
         ("pl_opportunity_cost_usdt", "capital_weighted_pl_opportunity_cost_pct"),
         ("pl_loss_usdt", "capital_weighted_pl_loss_pct"),
+        (
+            "pl_swap_event_convexity_cost_usdt",
+            "capital_weighted_pl_swap_event_convexity_cost_pct",
+        ),
+        (
+            "pl_swap_event_opportunity_cost_usdt",
+            "capital_weighted_pl_swap_event_opportunity_cost_pct",
+        ),
+        (
+            "pl_swap_event_loss_usdt",
+            "capital_weighted_pl_swap_event_loss_pct",
+        ),
     ):
         if not np.allclose(
             portfolio_daily[target],
@@ -877,7 +1080,7 @@ def build_risk_metrics(
     """Build all versioned risk outputs for the frozen WETH/USDT sample."""
 
     data_root = Path(data_root)
-    output_root = Path(output_root or data_root / "derived" / "risk_metrics" / "v1")
+    output_root = Path(output_root or data_root / "derived" / "risk_metrics" / "v2")
     output_root.mkdir(parents=True, exist_ok=True)
     pair_path = data_root / "derived" / "returns" / "non_same_block_pair_returns.parquet"
     pool_event_root = data_root / "processed" / "pool_events"
@@ -939,7 +1142,7 @@ def build_risk_metrics(
             }
         )
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "formula_version": FORMULA_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "repository_revision": _git_revision(repository_root),
@@ -959,6 +1162,8 @@ def build_risk_metrics(
         "conventions": {
             "external_price": "Binance ETHUSDT close exactly one second before event",
             "pool_price": "exact sqrt_price_x96 ordered by block/transaction/log",
+            "pl_primary_mesh": "last in-scope pool Swap state per Ethereum block",
+            "pl_sensitivity_mesh": "every in-scope pool Swap event",
             "risk_free": "SOFR effective-date calendar forward-fill, ACT/360",
             "fees": "excluded from IL, LVR, and PL",
             "gas": "excluded from IL, LVR, and PL",

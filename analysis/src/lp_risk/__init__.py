@@ -2,7 +2,7 @@
 
 from .formulas import (  # noqa: F401
     SofrCurve,
-    concavity_gap,
+    convexity_cost,
     inventory_from_price,
     lvr_step,
     sqrt_price_x96_to_price,
