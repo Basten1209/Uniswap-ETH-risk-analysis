@@ -2,10 +2,11 @@
 
 This directory will catalog literature and documentation used for **An
 Empirical Analysis of Uniswap V3 LP Risk Measures: Evidence from the WETH/USDT
-Pool**. It currently contains six extracted detailed studies covering realized
-LP returns, impermanent loss (IL), loss-versus-rebalancing (LVR), predictable
-loss (PL), and related liquidity- and fee-design questions. References must not
-be invented to fill remaining gaps.
+Pool**. It currently contains six extracted detailed studies and seventeen
+discovered sources awaiting review. Together, they cover realized LP returns,
+impermanent loss (IL), loss-versus-rebalancing (LVR), predictable loss (PL),
+and related liquidity- and fee-design questions. References must not be
+invented to fill remaining gaps.
 
 Return to the [repository overview](../README.md) or review the [research
 workflow](../flow.md).
@@ -45,6 +46,31 @@ status `extracted`.
 | Jason Milionis, Ciamac C. Moallemi, and Tim Roughgarden. “Automated Market Making and Arbitrage Profits in the Presence of Fees.” *Financial Cryptography and Data Security: 28th International Conference, FC 2024, Revised Selected Papers, Part I*, 159–171, Springer, 2025. | `loss-versus-rebalancing`, `market-regimes`, `lp-fee-design` | [paper](https://doi.org/10.1007/978-3-031-78676-1_9) · [review — Jaeho Kim](https://infobox1335.tistory.com/61) |
 | Jason Milionis, Ciamac C. Moallemi, Tim Roughgarden, and Anthony Lee Zhang. “Automated Market Making and Loss-Versus-Rebalancing.” arXiv:2208.06046v5, 2024. | `uniswap-v3-amm`, `lp-returns`, `loss-versus-rebalancing`, `blockchain-data-methods`, `lp-fee-design` | [paper](https://arxiv.org/abs/2208.06046) · [review — Jaeho Kim](https://infobox1335.tistory.com/60) |
 
+## Discovered studies
+
+The following seventeen sources have status `discovered`. Their detailed
+reviews and summaries have not yet been created.
+
+| Reference | Topics | Links |
+| --- | --- | --- |
+| Andrea Barbon and Angelo Ranaldo. “On the Quality of Cryptocurrency Markets: Centralized vs. Decentralized Exchanges.” *Management Science*, Articles in Advance, 2026. | `uniswap-v3-amm`, `market-regimes`, `blockchain-data-methods`, `lp-fee-design` | [paper](https://doi.org/10.1287/mnsc.2024.07703) |
+| Maxim Bichuch and Zachary Feinstein. “Axioms for Automated Market Makers: A Mathematical Framework in FinTech and Decentralized Finance.” *Operations Research* 74(3), 1187–1202, 2026. | `uniswap-v3-amm`, `impermanent-loss`, `lp-fee-design` | [paper](https://doi.org/10.1287/opre.2022.0520) |
+| Agostino Capponi and Ruizhe Jia. “Liquidity Provision on Blockchain-Based Decentralized Exchanges.” *The Review of Financial Studies* 38(10), 3040–3085, 2025. | `uniswap-v3-amm`, `lp-returns`, `market-regimes`, `blockchain-data-methods`, `lp-fee-design` | [paper](https://doi.org/10.1093/rfs/hhaf046) |
+| Tian Chen, Jun Deng, Jing Nie, Bin Zou, and Qi Fu. “Liquidity Provision and Its Information Content in Decentralized Markets.” *Journal of Financial Markets*, article 101073, 2026. | `uniswap-v3-amm`, `lp-returns`, `impermanent-loss`, `market-regimes`, `blockchain-data-methods` | [paper](https://doi.org/10.1016/j.finmar.2026.101073) |
+| Gang Chu, Michael Dowling, and Xiao Li. “Impermanent Loss in Cryptocurrency.” *Journal of International Money and Finance* 160, article 103476, 2026. | `lp-returns`, `impermanent-loss`, `market-regimes`, `blockchain-data-methods` | [paper](https://doi.org/10.1016/j.jimonfin.2025.103476) |
+| Michele Fabi and Julien Prat. “The Economics of Constant Function Market Makers.” *Journal of Corporate Finance* 91, article 102737, 2025. | `uniswap-v3-amm`, `lp-fee-design` | [paper](https://doi.org/10.1016/j.jcorpfin.2025.102737) |
+| Hisham Farag, Di Luo, Larisa Yarovaya, and Damian Zięba. “Returns from Liquidity Provision in Cryptocurrency Markets.” *Journal of Banking & Finance* 175, article 107411, 2025. | `lp-returns`, `impermanent-loss`, `market-regimes`, `blockchain-data-methods` | [paper](https://doi.org/10.1016/j.jbankfin.2025.107411) |
+| Joel Hasbrouck, Thomas J. Rivera, and Fahad Saleh. “An Economic Model of a Decentralized Exchange with Concentrated Liquidity.” *Management Science* 72(5), 3666–3683, 2026. | `uniswap-v3-amm`, `lp-returns`, `lp-fee-design` | [paper](https://doi.org/10.1287/mnsc.2024.04510) |
+| Woojin Jeong, Seongwan Park, Jaewook Lee, and Yunyoung Lee. “LiqBoost: Enhancing Liquidity Provision for Blockchain-Based Decentralized Exchanges.” *Expert Systems with Applications* 297, article 129230, 2026. | `uniswap-v3-amm`, `lp-returns`, `blockchain-data-methods`, `lp-fee-design` | [paper](https://doi.org/10.1016/j.eswa.2025.129230) |
+| Alfred Lehar and Christine Parlour. “Decentralized Exchange: The Uniswap Automated Market Maker.” *The Journal of Finance* 80(1), 321–374, 2025. | `uniswap-v3-amm`, `lp-returns`, `blockchain-data-methods`, `lp-fee-design` | [paper](https://doi.org/10.1111/jofi.13405) |
+| Tristan Lim. “Predictive Crypto-Asset Automated Market Maker Architecture for Decentralized Finance Using Deep Reinforcement Learning.” *Financial Innovation* 10(1), article 144, 2024. | `uniswap-v3-amm`, `impermanent-loss`, `lp-fee-design` | [paper](https://doi.org/10.1186/s40854-024-00660-0) |
+| Vijay Mohan. “Automated Market Makers and Decentralized Exchanges: A DeFi Primer.” *Financial Innovation* 8(1), article 20, 2022. | `uniswap-v3-amm`, `impermanent-loss`, `lp-fee-design` | [paper](https://doi.org/10.1186/s40854-021-00314-5) |
+| Andreas Park. “The Conceptual Flaws of Decentralized Automated Market Making.” *Management Science* 69(11), 6731–6751, 2023. | `uniswap-v3-amm`, `market-regimes`, `lp-fee-design` | [paper](https://doi.org/10.1287/mnsc.2021.02802) |
+| Seongwan Park, Seungju Lee, Yunyoung Lee, Hyungjin Ko, Bumho Son, Jaewook Lee, and Huisu Jang. “Price Co-Movements in Decentralized Financial Markets.” *Applied Economics Letters* 30(21), 3075–3082, 2023. | `market-regimes`, `blockchain-data-methods` | [paper](https://doi.org/10.1080/13504851.2022.2120952) |
+| Seongwan Park, Woojin Jeong, Yunyoung Lee, Bumho Son, Huisu Jang, and Jaewook Lee. “Unraveling the MEV Enigma: ABI-Free Detection Model Using Graph Neural Networks.” *Future Generation Computer Systems* 153, 70–83, 2024. | `uniswap-v3-amm`, `blockchain-data-methods`, `lp-fee-design` | [paper](https://doi.org/10.1016/j.future.2023.11.014) |
+| Angelo Ranaldo, Ganesh Viswanath-Natraj, and Junxuan Wang. “Blockchain Currency Markets.” *Journal of Financial and Quantitative Analysis*, accepted manuscript, 2026. | `uniswap-v3-amm`, `market-regimes`, `blockchain-data-methods` | [paper](https://doi.org/10.1017/S0022109026102841) |
+| Bumho Son, Seongwan Park, Jaewook Lee, and Huisu Jang. “Optimal Strategy in Blockchain Transaction Issuances with CIR Process.” *Computational Economics* 66(5), 4137–4159, 2025. | `market-regimes`, `blockchain-data-methods` | [paper](https://doi.org/10.1007/s10614-024-10839-3) |
+
 ## Inclusion criteria
 
 A source may enter the reviewed catalog when it:
@@ -70,6 +96,9 @@ limitations belong in the linked detailed study.
 | Reference | Authors, title, venue or publisher, year, and version |
 | Topics | One or more tags from the review categories |
 | Links | Stable paper link and detailed study labeled `review — Reviewer Name` |
+
+A `discovered` entry carries only its stable paper link until a detailed study
+has been created.
 
 ## Review process
 
